@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block title %}{% if object %}Editar categoría{% else %}Nueva categoría{% endif %}{% endblock %}
+{% block container_style_attr %}style="max-width: 560px;"{% endblock %}
+{% block content %}
+<div class="card shadow-sm">
+  <div class="card-body">
+    <h1 class="h4 mb-3">{% if object %}Editar categoría{% else %}Nueva categoría{% endif %}</h1>
+    <form method="post">
+      {% csrf_token %}
+      {% include 'comun/campos_form.html' %}
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary">Guardar</button>
+        <a href="{% url 'productos:categoria_lista' %}" class="btn btn-outline-secondary">Cancelar</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

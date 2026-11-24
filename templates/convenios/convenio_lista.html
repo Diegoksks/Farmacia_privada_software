@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+{% block title %}Convenios{% endblock %}
+{% block container_style_attr %}style="max-width: 960px;"{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h1 class="h4 mb-1"><i class="bi bi-hospital me-2 text-primary"></i>Convenios</h1>
+    <p class="text-muted small mb-0">Isapres y seguros complementarios con descuentos automáticos por compra (RFP-08)</p>
+  </div>
+  {% if perms.convenios.add_convenio %}
+  <a href="{% url 'convenios:crear' %}" class="btn btn-primary btn-sm">
+    <i class="bi bi-plus-lg me-1"></i>Nuevo convenio
+  </a>
+  {% endif %}
+</div>
+
+{# Filtros #}
+<form method="get" class="card shadow-sm mb-4">
+  <div class="card-body py-3">
+    <div class="row g-2 align-items-end">
+      <div class="col-md-5">
+        <label class="form-label small fw-semibold mb-1">Buscar</label>
+        <input type="text" name="q" value="{{ filtros.q }}" class="form-control form-control-sm"
+               placeholder="Nombre del convenio…">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small fw-semibold mb-1">Tipo</label>
+        <select name="tipo" class="form-select form-select-sm">
+          <option value="">Todos</option>
+          {% for val, label in tipos %}
+          <option value="{{ val }}" {% if filtros.tipo == val %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label small fw-semibold mb-1">Estado</label>
+        <select name="estado" class="form-select form-select-sm">
+          <option value="">Todos</option>
+          <option value="activos" {% if filtros.estado == 'activos' %}selected{% endif %}>Activos</option>
+          <option value="inactivos" {% if filtros.estado == 'inactivos' %}selected{% endif %}>Inactivos</option>
+        </select>
+      </div>
+      <div class="col-md-2 d-flex gap-2">
+        <button type="submit" class="btn btn-primary btn-sm flex-grow-1">
+          <i class="bi bi-search me-1"></i>Filtrar
+        </button>
+        <a href="{% url 'convenios:lista' %}" class="btn btn-outline-secondary btn-sm" title="Limpiar">
+          <i class="bi bi-x-lg"></i>
+        </a>
+      </div>
+    </div>
+  </div>
+</form>
+
+{# Grilla de cards #}
+{% if convenios %}
+<div class="row g-3">
+  {% for conv in convenios %}
+  <div class="col-md-6 col-lg-4">
+    <div class="card shadow-sm h-100 {% if not conv.activo %}opacity-75{% endif %}">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <div>
+            {% if conv.tipo == 'ISAPRE' %}
+              <span class="badge text-bg-primary mb-1">Isapre</span>
+            {% else %}
+              <span class="badge text-bg-info mb-1">Seguro complementario</span>
+            {% endif %}
+            {% if not conv.activo %}
+              <span class="badge text-bg-secondary mb-1">Inactivo</span>
+            {% endif %}
+          </div>
+          <span class="fs-5 fw-bold text-primary">{{ conv.descuento_porcentaje }}%</span>
+        </div>
+        <h2 class="h6 fw-bold mb-1">{{ conv.nombre }}</h2>
+        <p class="small text-muted mb-3">
+          <i class="bi bi-people me-1"></i>{{ conv.total_afiliados }} afiliado{{ conv.total_afiliados|pluralize }} activo{{ conv.total_afiliados|pluralize }}
+        </p>
+        <div class="d-flex gap-2">
+          <a href="{% url 'convenios:detalle' conv.pk %}" class="btn btn-sm btn-outline-primary flex-grow-1">
+            <i class="bi bi-eye me-1"></i>Ver detalle
+          </a>
+          {% if perms.convenios.change_convenio %}
+          <a href="{% url 'convenios:editar' conv.pk %}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-pencil"></i>
+          </a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="text-center py-5">
+  <i class="bi bi-hospital display-4 text-muted opacity-50"></i>
+  <p class="text-muted mt-3 mb-0">No se encontraron convenios.</p>
+  {% if perms.convenios.add_convenio %}
+  <a href="{% url 'convenios:crear' %}" class="btn btn-primary btn-sm mt-3">
+    <i class="bi bi-plus-lg me-1"></i>Crear primer convenio
+  </a>
+  {% endif %}
+</div>
+{% endif %}
+
+{% endblock %}

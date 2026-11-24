@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+{% block title %}{{ cliente.nombre_completo }}{% endblock %}
+{% block container_style_attr %}style="max-width: 900px;"{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-start mb-3">
+  <div>
+    <h1 class="h4 mb-1">
+      {{ cliente.nombre_completo }}
+      {% if not cliente.activo %}<span class="badge text-bg-secondary align-middle">Inactivo</span>{% endif %}
+    </h1>
+    <div class="text-muted font-monospace">{{ cliente.rut }}</div>
+  </div>
+  <div class="text-nowrap">
+    <a href="{% url 'clientes:lista' %}" class="btn btn-sm btn-outline-secondary">Volver</a>
+    {% if perms.clientes.change_cliente %}
+      <a href="{% url 'clientes:editar' cliente.pk %}" class="btn btn-sm btn-outline-secondary">Editar</a>
+      <form method="post" action="{% url 'clientes:toggle_activo' cliente.pk %}" class="d-inline">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-sm btn-outline-{% if cliente.activo %}danger{% else %}success{% endif %}">
+          {% if cliente.activo %}Desactivar{% else %}Activar{% endif %}
+        </button>
+      </form>
+    {% endif %}
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-md-5">
+    <div class="card shadow-sm mb-3">
+      <div class="card-body">
+        <h2 class="h6 mb-3">Contacto</h2>
+        <dl class="row mb-0 small">
+          <dt class="col-4 text-muted fw-normal">Teléfono</dt>
+          <dd class="col-8">{{ cliente.telefono|default:'—' }}</dd>
+          <dt class="col-4 text-muted fw-normal">Correo</dt>
+          <dd class="col-8">{{ cliente.email|default:'—' }}</dd>
+          <dt class="col-4 text-muted fw-normal">Registrado</dt>
+          <dd class="col-8">{{ cliente.creado_en|date:"d-m-Y" }}</dd>
+        </dl>
+      </div>
+    </div>
+
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h2 class="h6 mb-3">Convenios vigentes</h2>
+        {% for afiliacion in convenios_vigentes %}
+          <div class="d-flex justify-content-between align-items-center {% if not forloop.last %}mb-2 pb-2 border-bottom{% endif %}">
+            <div>
+              <div class="fw-semibold small">{{ afiliacion.convenio.nombre }}</div>
+              <div class="text-muted" style="font-size:.78rem;">
+                {{ afiliacion.convenio.get_tipo_display }}
+                {% if afiliacion.numero_afiliado %}· N° {{ afiliacion.numero_afiliado }}{% endif %}
+              </div>
+            </div>
+            <span class="badge text-bg-light border tabular" title="Descuento por defecto; algunas categorías pueden tener una cobertura distinta">
+              {{ afiliacion.convenio.descuento_porcentaje }}% base
+            </span>
+          </div>
+        {% empty %}
+          <p class="text-muted small mb-0">Sin convenios vigentes. Las ventas se cobran a precio de lista.</p>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-7">
+    <div class="card shadow-sm mb-3">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h2 class="h6 mb-0">Recetas recientes</h2>
+          {% if recetas_con_saldo %}
+            <span class="badge text-bg-light border">{{ recetas_con_saldo }} con saldo pendiente</span>
+          {% endif %}
+        </div>
+        <table class="table table-sm mb-0">
+          <tbody>
+            {% for receta in recetas %}
+              <tr>
+                <td>
+                  <div class="small fw-semibold">
+                    {% for detalle in receta.detalles.all %}{{ detalle.producto.nombre }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                  </div>
+                  <div class="text-muted" style="font-size:.78rem;">
+                    {{ receta.medico_nombre }} · emitida {{ receta.fecha_emision|date:"d-m-Y" }}
+                  </div>
+                </td>
+                <td class="text-end align-middle">
+                  {% if receta.esta_vigente %}
+                    <span class="badge text-bg-success">Vigente</span>
+                  {% else %}
+                    <span class="badge text-bg-secondary">Vencida</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% empty %}
+              <tr><td class="text-muted small">Este cliente no tiene recetas registradas.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h2 class="h6 mb-3">Últimas compras</h2>
+        <table class="table table-sm mb-0">
+          <tbody>
+            {% for venta in ventas %}
+              <tr>
+                <td class="small">
+                  {{ venta.fecha|date:"d-m-Y H:i" }}
+                  {% if venta.estado == 'ANULADA' %}<span class="badge text-bg-danger">Anulada</span>{% endif %}
+                </td>
+                <td class="text-end small">${{ venta.total }}</td>
+                <td class="text-end" style="width:1%">
+                  {% if perms.ventas.view_venta %}
+                    <a href="{% url 'ventas:detalle_venta' venta.pk %}" class="btn btn-sm btn-outline-secondary py-0">Ver</a>
+                  {% endif %}
+                </td>
+              </tr>
+            {% empty %}
+              <tr><td class="text-muted small">Sin compras registradas.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

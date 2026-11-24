@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+    body { font-family: Helvetica, sans-serif; font-size: 10pt; }
+    h1 { font-size: 14pt; margin-bottom: 0; }
+    p.subtitulo { color: #555; margin-top: 2px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #ccc; padding: 4px 6px; text-align: left; }
+    th { background-color: #eee; }
+    td.num, th.num { text-align: right; }
+    tr.critico { background-color: #fbdcdc; }
+</style>
+</head>
+<body>
+    <h1>Farmacia Privada — Reporte de inventario</h1>
+    <p class="subtitulo">Generado el {% now "d-m-Y H:i" %}</p>
+
+    <table>
+        <tr>
+            <th>Producto</th><th>Categoría</th>
+            <th class="num">Stock actual</th><th class="num">Stock mínimo</th><th class="num">Precio</th>
+        </tr>
+        {% for p in productos %}
+        <tr {% if p.stock_actual <= p.stock_minimo %}class="critico"{% endif %}>
+            <td>{{ p.nombre }}</td>
+            <td>{{ p.categoria.nombre }}</td>
+            <td class="num">{{ p.stock_actual }}</td>
+            <td class="num">{{ p.stock_minimo }}</td>
+            <td class="num">${{ p.precio_venta }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+    @page { size: letter portrait; margin: 2cm; }
+    body { font-family: Helvetica, sans-serif; font-size: 10pt; color: #222; }
+    .encabezado { border-bottom: 2px solid #0d6efd; padding-bottom: 8px; margin-bottom: 14px; }
+    .empresa { font-size: 15pt; font-weight: bold; color: #0d6efd; }
+    .empresa-datos { color: #666; font-size: 8.5pt; }
+    .doc-caja { border: 1.5px solid #0d6efd; padding: 6px 10px; text-align: center; }
+    .doc-tipo { font-weight: bold; font-size: 11pt; color: #0d6efd; }
+    .doc-folio { font-size: 13pt; font-weight: bold; }
+    table.datos { width: 100%; margin-bottom: 12px; }
+    table.datos td { padding: 2px 0; font-size: 9.5pt; }
+    td.etiqueta { color: #666; width: 90px; }
+    table.detalle { width: 100%; border-collapse: collapse; margin-top: 6px; }
+    table.detalle th { background-color: #0d6efd; color: #fff; padding: 5px 6px; text-align: left; font-size: 9pt; }
+    table.detalle td { border-bottom: 1px solid #ddd; padding: 5px 6px; font-size: 9.5pt; }
+    .num { text-align: right; }
+    .tachado { text-decoration: line-through; color: #999; font-size: 8pt; }
+    .totales { margin-top: 10px; width: 100%; }
+    .totales td { padding: 3px 6px; font-size: 10pt; }
+    .total-final { font-size: 12pt; font-weight: bold; border-top: 2px solid #0d6efd; }
+    .anulada { color: #dc3545; border: 2px solid #dc3545; padding: 6px; text-align: center; font-weight: bold; margin-bottom: 12px; }
+    .pie { margin-top: 25px; border-top: 1px solid #ddd; padding-top: 8px; color: #888; font-size: 8pt; text-align: center; }
+</style>
+</head>
+<body>
+
+    <table class="encabezado" width="100%">
+        <tr>
+            <td>
+                <div class="empresa">Farmacia Privada</div>
+                <div class="empresa-datos">
+                    Sistema de Gestión Farmacéutica<br>
+                    Proyecto Integrado AP-N4-C1 — INACAP
+                </div>
+            </td>
+            <td width="180">
+                <div class="doc-caja">
+                    <div class="doc-tipo">{{ documento.get_tipo_display|upper }}</div>
+                    <div class="doc-folio">N° {{ documento.folio }}</div>
+                </div>
+            </td>
+        </tr>
+    </table>
+
+    {% if venta.estado == 'ANULADA' %}
+        <div class="anulada">DOCUMENTO ANULADO</div>
+    {% endif %}
+
+    <table class="datos">
+        <tr>
+            <td class="etiqueta">Fecha:</td>
+            <td>{{ documento.fecha_emision|date:"d-m-Y H:i" }}</td>
+            <td class="etiqueta">Venta:</td>
+            <td>#{{ venta.pk }}</td>
+        </tr>
+        <tr>
+            <td class="etiqueta">Cliente:</td>
+            <td>{% if venta.cliente %}{{ venta.cliente.nombre_completo }}{% else %}Consumidor final{% endif %}</td>
+            <td class="etiqueta">RUT:</td>
+            <td>{% if venta.cliente %}{{ venta.cliente.rut }}{% else %}-{% endif %}</td>
+        </tr>
+        <tr>
+            <td class="etiqueta">Atendido por:</td>
+            <td>{{ venta.vendedor.get_full_name|default:venta.vendedor.username }}</td>
+            <td class="etiqueta">Pago:</td>
+            <td>{{ venta.get_metodo_pago_display }}</td>
+        </tr>
+    </table>
+
+    <table class="detalle">
+        <tr>
+            <th>Producto</th>
+            <th class="num">Cant.</th>
+            <th class="num">P. unitario</th>
+            <th>Convenio</th>
+            <th class="num">Subtotal</th>
+        </tr>
+        {% for detalle in detalles %}
+        <tr>
+            <td>
+                {{ detalle.producto.nombre }}
+                {% if detalle.producto.presentacion %}<br><span class="empresa-datos">{{ detalle.producto.presentacion }}</span>{% endif %}
+            </td>
+            <td class="num">{{ detalle.cantidad }}</td>
+            <td class="num">
+                {% if detalle.convenio %}<span class="tachado">${{ detalle.precio_lista }}</span><br>{% endif %}
+                ${{ detalle.precio_unitario }}
+            </td>
+            <td>{% if detalle.convenio %}{{ detalle.convenio.nombre }}{% else %}-{% endif %}</td>
+            <td class="num">${{ detalle.subtotal }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <table class="totales">
+        <tr>
+            <td class="num total-final">TOTAL A PAGAR</td>
+            <td class="num total-final" width="120">${{ venta.total }} CLP</td>
+        </tr>
+    </table>
+
+    <div class="pie">
+        Documento tributario simulado con fines académicos. Sin validez legal ni integración con el Servicio de Impuestos Internos.
+    </div>
+
+</body>
+</html>

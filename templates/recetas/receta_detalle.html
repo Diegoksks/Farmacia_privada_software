@@ -1,0 +1,214 @@
+{% extends 'base.html' %}
+{% block title %}Receta #{{ receta.pk }}{% endblock %}
+{% block container_style_attr %}style="max-width: 960px;"{% endblock %}
+{% block content %}
+
+{# ── Encabezado ── #}
+<div class="d-flex justify-content-between align-items-start mb-4">
+  <div>
+    <h1 class="h4 mb-1">
+      <i class="bi bi-file-medical me-2 text-primary"></i>Receta #{{ receta.pk }}
+      {% if receta.esta_vigente %}
+        <span class="badge text-bg-success align-middle ms-1">Vigente</span>
+      {% else %}
+        <span class="badge text-bg-secondary align-middle ms-1">Vencida</span>
+      {% endif %}
+      {% if receta.tipo == 'FISICA' %}
+        <span class="badge text-bg-light border align-middle ms-1"><i class="bi bi-file-earmark me-1"></i>Física</span>
+      {% else %}
+        <span class="badge text-bg-light border align-middle ms-1"><i class="bi bi-cloud me-1"></i>Digital</span>
+      {% endif %}
+    </h1>
+    {% if receta.folio %}
+    <div class="text-muted small">Folio: <span class="font-monospace">{{ receta.folio }}</span></div>
+    {% endif %}
+  </div>
+  <div class="d-flex gap-2 flex-wrap justify-content-end">
+    <a href="{% url 'recetas:lista' %}" class="btn btn-sm btn-outline-secondary">
+      <i class="bi bi-arrow-left me-1"></i>Volver
+    </a>
+    {% if perms.recetas.change_receta %}
+    <a href="{% url 'recetas:editar' receta.pk %}" class="btn btn-sm btn-outline-primary">
+      <i class="bi bi-pencil me-1"></i>Editar
+    </a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="row g-3">
+
+  {# ── Columna izquierda: paciente + médico ── #}
+  <div class="col-md-4">
+    <div class="card shadow-sm mb-3">
+      <div class="card-body">
+        <h2 class="h6 fw-semibold mb-3"><i class="bi bi-person me-2 text-muted"></i>Paciente</h2>
+        <dl class="row small mb-0">
+          <dt class="col-5 text-muted fw-normal">Nombre</dt>
+          <dd class="col-7 fw-semibold">{{ receta.cliente.nombre_completo }}</dd>
+          <dt class="col-5 text-muted fw-normal">RUT</dt>
+          <dd class="col-7 font-monospace">{{ receta.cliente.rut }}</dd>
+          {% if receta.cliente.telefono %}
+          <dt class="col-5 text-muted fw-normal">Teléfono</dt>
+          <dd class="col-7">{{ receta.cliente.telefono }}</dd>
+          {% endif %}
+        </dl>
+        <a href="{% url 'clientes:detalle' receta.cliente.pk %}" class="btn btn-sm btn-outline-secondary w-100 mt-2">
+          <i class="bi bi-person-lines-fill me-1"></i>Ver ficha cliente
+        </a>
+      </div>
+    </div>
+
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h2 class="h6 fw-semibold mb-3"><i class="bi bi-hospital me-2 text-muted"></i>Médico emisor</h2>
+        <dl class="row small mb-0">
+          <dt class="col-5 text-muted fw-normal">Nombre</dt>
+          <dd class="col-7 fw-semibold">{{ receta.medico_nombre }}</dd>
+          <dt class="col-5 text-muted fw-normal">RUT</dt>
+          <dd class="col-7 font-monospace">{{ receta.medico_rut }}</dd>
+          <dt class="col-5 text-muted fw-normal">Emisión</dt>
+          <dd class="col-7">{{ receta.fecha_emision|date:"d-m-Y" }}</dd>
+          <dt class="col-5 text-muted fw-normal">Vencimiento</dt>
+          <dd class="col-7">{{ receta.fecha_vencimiento|date:"d-m-Y" }}</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+
+  {# ── Columna derecha: medicamentos + dispensaciones ── #}
+  <div class="col-md-8">
+
+    {# Medicamentos prescritos #}
+    <div class="card shadow-sm mb-3">
+      <div class="card-body">
+        <h2 class="h6 fw-semibold mb-3">
+          <i class="bi bi-capsule me-2 text-muted"></i>Medicamentos prescritos
+        </h2>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Medicamento</th>
+                <th class="text-center">Prescrito</th>
+                <th class="text-center">Dispensado</th>
+                <th class="text-center">Saldo</th>
+                <th>Control</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for detalle in receta.detalles.all %}
+              <tr>
+                <td>
+                  <div class="small fw-semibold">{{ detalle.producto.nombre }}</div>
+                  {% if detalle.posologia %}
+                  <div class="text-muted" style="font-size:.75rem;">{{ detalle.posologia }}</div>
+                  {% endif %}
+                </td>
+                <td class="text-center small">{{ detalle.cantidad_prescrita }}</td>
+                <td class="text-center small">{{ detalle.cantidad_dispensada }}</td>
+                <td class="text-center">
+                  {% if detalle.saldo > 0 %}
+                    <span class="badge text-bg-success">{{ detalle.saldo }}</span>
+                  {% else %}
+                    <span class="badge text-bg-secondary">0</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <span class="badge text-bg-light border small">
+                    {{ detalle.producto.get_nivel_control_display }}
+                  </span>
+                  {% if detalle.producto.categoria_regulatoria != 'NINGUNA' %}
+                  <span class="badge text-bg-danger small ms-1">
+                    {{ detalle.producto.get_categoria_regulatoria_display }}
+                  </span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    {# Historial de dispensaciones #}
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h2 class="h6 fw-semibold mb-3">
+          <i class="bi bi-clock-history me-2 text-muted"></i>Historial de dispensaciones
+        </h2>
+        {% with dispensaciones_existentes=False %}
+        {% for detalle in receta.detalles.all %}
+          {% for disp in detalle.dispensaciones.all %}
+          {% if forloop.parentloop.first and forloop.first %}
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Fecha</th>
+                  <th>Medicamento</th>
+                  <th class="text-center">Cant.</th>
+                  <th>Retira</th>
+                  <th>Registrado por</th>
+                </tr>
+              </thead>
+              <tbody>
+          {% endif %}
+              <tr>
+                <td class="small text-muted text-nowrap">{{ disp.fecha|date:"d-m-Y H:i" }}</td>
+                <td class="small">{{ detalle.producto.nombre }}</td>
+                <td class="text-center small">{{ disp.cantidad }}</td>
+                <td class="small">
+                  {% if disp.retiro_por_tercero %}
+                    <span class="text-warning-emphasis">
+                      <i class="bi bi-person-check me-1"></i>{{ disp.retirado_por_nombre }}
+                      {% if disp.retirado_por_relacion %}
+                        <span class="text-muted">({{ disp.retirado_por_relacion }})</span>
+                      {% endif %}
+                    </span>
+                  {% else %}
+                    <span class="text-muted"><i class="bi bi-person me-1"></i>Paciente</span>
+                  {% endif %}
+                </td>
+                <td class="small text-muted">{{ disp.usuario.get_full_name|default:disp.usuario.username }}</td>
+              </tr>
+          {% endfor %}
+        {% endfor %}
+
+        {# Cerrar la tabla si hay dispensaciones #}
+        {% for detalle in receta.detalles.all %}
+          {% for disp in detalle.dispensaciones.all %}
+            {% if forloop.parentloop.last and forloop.last %}
+              </tbody>
+            </table>
+          </div>
+            {% endif %}
+          {% empty %}
+          {% endfor %}
+        {% empty %}
+        {% endfor %}
+        {% endwith %}
+        {# Mensaje cuando no hay dispensaciones — iteramos detalles y dispensaciones #}
+        {% with total_disp=0 %}
+        {% for detalle in receta.detalles.all %}
+          {% for disp in detalle.dispensaciones.all %}{% endfor %}
+        {% endfor %}
+        {% endwith %}
+        {% for detalle in receta.detalles.all %}{% for disp in detalle.dispensaciones.all %}{% if forloop.parentloop.first and forloop.first and not forloop.last %}{% endif %}{% empty %}{% endfor %}{% empty %}
+        <p class="text-muted small mb-0 text-center py-3">
+          <i class="bi bi-info-circle me-1"></i>Aún no hay dispensaciones registradas para esta receta.
+        </p>
+        {% endfor %}
+      </div>
+    </div>
+
+  </div>
+</div>
+
+{# Metadatos de auditoría #}
+<div class="text-muted small mt-3">
+  Registrada por {{ receta.creado_por.get_full_name|default:receta.creado_por.username }}
+  el {{ receta.creado_en|date:"d-m-Y H:i" }}
+</div>
+
+{% endblock %}

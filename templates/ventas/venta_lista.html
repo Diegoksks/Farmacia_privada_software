@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+{% block title %}Historial de Ventas{% endblock %}
+{% block container_style_attr %}style="max-width: 1200px;"{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+  <div>
+    <h1 class="h3 mb-0 fw-bold">Historial de Ventas</h1>
+    <p class="text-muted small mb-0 mt-1">Registro histórico de transacciones del sistema</p>
+  </div>
+</div>
+
+<div class="card mb-4 shadow-sm border-0" style="animation: alertSlideIn .3s ease both;">
+  <div class="card-body">
+    <form method="get" class="row g-3 align-items-end">
+      <div class="col-md-5">
+        <label class="form-label small text-muted mb-1">Buscar por Folio o Cliente</label>
+        <div class="input-group">
+          <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+          <input type="text" name="q" value="{{ filtros.q }}" class="form-control" placeholder="ID de Venta, Nombres, Apellidos...">
+        </div>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small text-muted mb-1">Estado</label>
+        <select name="estado" class="form-select">
+          <option value="">Todos los estados</option>
+          <option value="COMPLETADA" {% if filtros.estado == 'COMPLETADA' %}selected{% endif %}>Completada</option>
+          <option value="ANULADA" {% if filtros.estado == 'ANULADA' %}selected{% endif %}>Anulada</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-primary w-100">
+          <i class="bi bi-funnel me-1"></i>Filtrar
+        </button>
+      </div>
+      <div class="col-md-2 text-md-end">
+        <a href="{% url 'ventas:punto_venta' %}" class="btn btn-success w-100">
+          <i class="bi bi-cart-plus me-1"></i>Nueva Venta
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card shadow-sm border-0" style="animation: alertSlideIn .4s ease both;">
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover table-borderless align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th class="ps-4">ID / Folio</th>
+            <th>Fecha y Hora</th>
+            <th>Cliente</th>
+            <th>Vendedor</th>
+            <th>Método</th>
+            <th class="text-end">Total</th>
+            <th class="text-center">Estado</th>
+            <th class="text-end pe-4">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for venta in ventas %}
+            <tr style="border-bottom: 1px solid var(--fp-borde);">
+              <td class="ps-4 font-mono fw-medium">#{{ venta.pk|stringformat:"05d" }}</td>
+              <td class="text-muted small">{{ venta.fecha|date:"d M Y, H:i" }}</td>
+              <td>
+                {% if venta.cliente %}
+                  <div class="fw-medium">{{ venta.cliente.nombre_completo }}</div>
+                  <div class="text-muted small">{{ venta.cliente.rut }}</div>
+                {% else %}
+                  <span class="text-muted fst-italic">Anónimo</span>
+                {% endif %}
+              </td>
+              <td>{{ venta.vendedor.get_full_name|default:venta.vendedor.username }}</td>
+              <td><span class="badge bg-secondary-subtle text-secondary">{{ venta.get_metodo_pago_display }}</span></td>
+              <td class="text-end tabular fw-semibold">${{ venta.total|floatformat:"0" }}</td>
+              <td class="text-center">
+                {% if venta.estado == 'COMPLETADA' %}
+                  <span class="badge bg-success-subtle text-success"><i class="bi bi-check-circle me-1"></i>Completada</span>
+                {% else %}
+                  <span class="badge bg-danger-subtle text-danger"><i class="bi bi-x-circle me-1"></i>Anulada</span>
+                {% endif %}
+              </td>
+              <td class="text-end pe-4">
+                <a href="{% url 'ventas:detalle_venta' venta.pk %}" class="btn btn-sm btn-outline-primary border-0" title="Ver Detalles">
+                  <i class="bi bi-eye"></i>
+                </a>
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="8" class="text-center text-muted py-5"><i class="bi bi-inbox fs-2 d-block mb-2 text-secondary"></i>No se encontraron ventas con los filtros aplicados.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% if is_paginated %}
+    <div class="card-footer bg-white border-0 py-3">
+      <nav aria-label="Paginación de ventas">
+        <ul class="pagination justify-content-center mb-0">
+          {% if page_obj.has_previous %}
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if filtros.q %}&q={{ filtros.q }}{% endif %}{% if filtros.estado %}&estado={{ filtros.estado }}{% endif %}">Anterior</a></li>
+          {% else %}
+            <li class="page-item disabled"><span class="page-link">Anterior</span></li>
+          {% endif %}
+          
+          <li class="page-item disabled"><span class="page-link">Página {{ page_obj.number }} de {{ paginator.num_pages }}</span></li>
+          
+          {% if page_obj.has_next %}
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}{% if filtros.q %}&q={{ filtros.q }}{% endif %}{% if filtros.estado %}&estado={{ filtros.estado }}{% endif %}">Siguiente</a></li>
+          {% else %}
+            <li class="page-item disabled"><span class="page-link">Siguiente</span></li>
+          {% endif %}
+        </ul>
+      </nav>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

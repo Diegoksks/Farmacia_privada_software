@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% block title %}{% if form.instance.pk %}Editar {{ form.instance.nombre }}{% else %}Nuevo Convenio{% endif %}{% endblock %}
+{% block container_style_attr %}style="max-width: 600px;"{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h1 class="h4 mb-1">
+      <i class="bi bi-hospital-fill me-2 text-primary"></i>
+      {% if form.instance.pk %}Editar convenio{% else %}Nuevo convenio{% endif %}
+    </h1>
+    <p class="text-muted small mb-0">Define el tipo, descuento base e informa el nombre del convenio (RFP-08).</p>
+  </div>
+  <a href="{% url 'convenios:lista' %}" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i>Cancelar
+  </a>
+</div>
+
+<form method="post" novalidate>
+  {% csrf_token %}
+
+  {% if form.non_field_errors %}
+  <div class="alert alert-danger py-2 small">
+    {% for e in form.non_field_errors %}{{ e }}{% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-12">
+          <label class="form-label fw-semibold small" for="{{ form.nombre.id_for_label }}">Nombre del convenio</label>
+          {{ form.nombre }}
+          {% if form.nombre.errors %}
+          <div class="invalid-feedback d-block small">{{ form.nombre.errors.0 }}</div>
+          {% endif %}
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-semibold small" for="{{ form.tipo.id_for_label }}">Tipo</label>
+          {{ form.tipo }}
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-semibold small" for="{{ form.descuento_porcentaje.id_for_label }}">
+            Descuento base (%)
+          </label>
+          <div class="input-group">
+            {{ form.descuento_porcentaje }}
+            <span class="input-group-text">%</span>
+          </div>
+          {% if form.descuento_porcentaje.errors %}
+          <div class="invalid-feedback d-block small">{{ form.descuento_porcentaje.errors.0 }}</div>
+          {% endif %}
+          <div class="form-text small">Aplica a todas las categorías sin cobertura específica.</div>
+        </div>
+        <div class="col-12">
+          <div class="form-check">
+            {{ form.activo }}
+            <label class="form-check-label small" for="{{ form.activo.id_for_label }}">
+              Convenio activo (disponible para aplicar en ventas)
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="d-flex justify-content-end gap-2 mt-3">
+    <a href="{% url 'convenios:lista' %}" class="btn btn-outline-secondary">Cancelar</a>
+    <button type="submit" class="btn btn-primary">
+      <i class="bi bi-save me-1"></i>
+      {% if form.instance.pk %}Actualizar{% else %}Guardar convenio{% endif %}
+    </button>
+  </div>
+</form>
+
+{% endblock %}

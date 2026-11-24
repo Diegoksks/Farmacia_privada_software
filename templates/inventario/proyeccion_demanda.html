@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+{% block title %}Proyección de Demanda{% endblock %}
+{% block container_style_attr %}style="max-width: 1000px;"{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center mb-4">
+  <a href="{% url 'panel:inicio' %}" class="btn btn-outline-secondary btn-sm me-3"><i class="bi bi-arrow-left"></i></a>
+  <div>
+    <h1 class="h3 mb-0 fw-bold">Proyección de Demanda (IA)</h1>
+    <p class="text-muted small mb-0 mt-1">
+      Cálculo predictivo mediante Regresión Lineal de <span class="fw-medium">scikit-learn</span> (Últimos 30 días).
+    </p>
+  </div>
+</div>
+
+<div class="card fp-glass border-0" style="animation: alertSlideIn .3s ease both; background: var(--fp-superficie); border-radius: 1rem; overflow: hidden;">
+  <div class="card-header border-bottom-0 pt-4 pb-0 d-flex justify-content-between align-items-center" style="background: transparent;">
+    <h5 class="mb-0 fw-bold" style="color: var(--fp-texto);"><i class="bi bi-graph-up-arrow me-2 text-primary"></i>Resultados del Modelo</h5>
+    <button id="btnGenerarIA" class="btn btn-sm shadow-sm" style="background: linear-gradient(135deg, var(--fp-primario), var(--fp-acento)); color:white; border:none; border-radius:8px; padding: 0.5rem 1rem;">
+      <i class="bi bi-magic me-2"></i>Generar Reporte con IA
+    </button>
+  </div>
+  
+  <div id="iaReportContainer" class="d-none px-4 pt-4 pb-2">
+    <div class="p-4 rounded-4 shadow-sm" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-left: 4px solid var(--fp-acento); backdrop-filter: blur(10px);">
+      <div class="d-flex align-items-center mb-3">
+        <div class="spinner-border spinner-border-sm text-primary me-2 d-none" id="iaSpinner" role="status"></div>
+        <h6 class="mb-0 fw-bold d-flex align-items-center" style="color:var(--fp-acento); letter-spacing: 0.5px;">
+          <i class="bi bi-robot fs-5 me-2"></i>Análisis Ejecutivo (Gemini 3.6 Flash)
+        </h6>
+      </div>
+      <div id="iaReportContent" style="font-size:0.95rem; line-height:1.7; color:var(--fp-texto); font-weight: 300;">
+        <!-- Reporte inyectado aquí -->
+      </div>
+    </div>
+  </div>
+
+  <div class="card-body p-0 mt-3">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0 text-white" style="--bs-table-bg: transparent; --bs-table-color: var(--fp-texto);">
+        <thead style="background: rgba(0,0,0,0.2);">
+          <tr>
+            <th class="ps-4 text-uppercase text-muted" style="font-size: 0.75rem; letter-spacing: 1px;">Producto</th>
+            <th class="text-center text-uppercase text-muted" style="font-size: 0.75rem; letter-spacing: 1px;">Stock Actual</th>
+            <th class="text-center text-uppercase text-muted" style="font-size: 0.75rem; letter-spacing: 1px;">Venta Diaria Promedio</th>
+            <th class="text-center text-uppercase text-muted" style="font-size: 0.75rem; letter-spacing: 1px;">Días Cobertura</th>
+            <th class="pe-4 text-center text-uppercase text-muted" style="font-size: 0.75rem; letter-spacing: 1px;">Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in proyecciones %}
+            <tr>
+              <td class="ps-4 fw-medium text-primary">{{ p.producto.nombre }}</td>
+              <td class="text-center fs-5 fw-bold">{{ p.stock_actual }}</td>
+              <td class="text-center text-muted">{{ p.promedio_diario }} und/día</td>
+              <td class="text-center">
+                {% if p.dias_restantes == 999 %}
+                  <span class="text-muted"><i class="bi bi-infinity"></i></span>
+                {% else %}
+                  <span class="fs-5 fw-bold {% if p.estado == 'crítico' %}text-danger{% elif p.estado == 'alerta' %}text-warning{% else %}text-success{% endif %}">
+                    {{ p.dias_restantes }}
+                  </span>
+                {% endif %}
+              </td>
+              <td class="pe-4 text-center">
+                {% if p.estado == 'crítico' %}
+                  <span class="badge bg-danger rounded-pill px-3 py-2"><i class="bi bi-exclamation-triangle me-1"></i>Crítico (Reponer ya)</span>
+                {% elif p.estado == 'alerta' %}
+                  <span class="badge bg-warning text-dark rounded-pill px-3 py-2"><i class="bi bi-info-circle me-1"></i>Alerta (Próximo)</span>
+                {% else %}
+                  <span class="badge bg-success rounded-pill px-3 py-2"><i class="bi bi-check-circle me-1"></i>Normal</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="5" class="text-center text-muted py-5"><i class="bi bi-inbox fs-2 d-block mb-2"></i>No hay suficientes datos de ventas para predecir.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const btn = document.getElementById('btnGenerarIA');
+  if (btn) {
+    btn.addEventListener('click', function() {
+      const container = document.getElementById('iaReportContainer');
+      const content = document.getElementById('iaReportContent');
+      const spinner = document.getElementById('iaSpinner');
+      
+      container.classList.remove('d-none');
+      content.innerHTML = '<span class="text-muted">Analizando tendencias de ventas y niveles de stock...</span>';
+      spinner.classList.remove('d-none');
+      btn.disabled = true;
+      
+      fetch("{% url 'inventario:proyeccion_ia_api' %}")
+        .then(res => res.json())
+        .then(data => {
+          content.innerHTML = data.reporte;
+        })
+        .catch(err => {
+          content.innerHTML = '<span class="text-danger">Ocurrió un error al conectar con la IA.</span>';
+        })
+        .finally(() => {
+          spinner.classList.add('d-none');
+          btn.disabled = false;
+        });
+    });
+  }
+});
+</script>
+{% endblock %}

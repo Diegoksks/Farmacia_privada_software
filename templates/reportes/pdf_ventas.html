@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+    body { font-family: Helvetica, sans-serif; font-size: 10pt; }
+    h1 { font-size: 14pt; margin-bottom: 0; }
+    p.subtitulo { color: #555; margin-top: 2px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #ccc; padding: 4px 6px; text-align: left; }
+    th { background-color: #eee; }
+    td.num, th.num { text-align: right; }
+    .total { text-align: right; font-weight: bold; margin-top: 8px; }
+</style>
+</head>
+<body>
+    <h1>Farmacia Privada — Reporte de ventas</h1>
+    <p class="subtitulo">Del {{ desde|date:"d-m-Y" }} al {{ hasta|date:"d-m-Y" }}</p>
+
+    <table>
+        <tr>
+            <th>Fecha</th><th>Venta</th><th>Cliente</th><th>Producto</th>
+            <th class="num">Cant.</th><th class="num">Precio</th><th class="num">Subtotal</th>
+        </tr>
+        {% for d in detalles %}
+        <tr>
+            <td>{{ d.venta.fecha|date:"d-m-Y H:i" }}</td>
+            <td>#{{ d.venta.pk }}</td>
+            <td>{% if d.venta.cliente %}{{ d.venta.cliente.nombre_completo }}{% else %}-{% endif %}</td>
+            <td>{{ d.producto.nombre }}</td>
+            <td class="num">{{ d.cantidad }}</td>
+            <td class="num">${{ d.precio_unitario }}</td>
+            <td class="num">${{ d.subtotal }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    <p class="total">Total: ${{ total }} CLP</p>
+</body>
+</html>

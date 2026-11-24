@@ -1,0 +1,1126 @@
+/* ==========================================================================
+   Farmacia Privada — Sistema de Estilos v2
+   Se carga DESPUÉS de Bootstrap 5. Sobreescribe variables y añade
+   componentes propios. Principio: densidad, legibilidad y wow-factor.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Variables y tokens de diseño
+   -------------------------------------------------------------------------- */
+:root {
+    /* Acento: verde clínico moderno */
+    --fp-acento:          #0d9e8a;
+    --fp-acento-h:        172;
+    --fp-acento-oscuro:   #0a7d6e;
+    --fp-acento-claro:    #e0f5f2;
+    --fp-acento-rgb:      13, 158, 138;
+
+    /* Gradientes */
+    --fp-grad-hero:      linear-gradient(135deg, #0d9e8a 0%, #136f63 60%, #0a4f47 100%);
+    --fp-grad-card:      linear-gradient(145deg, rgba(255,255,255,.9), rgba(255,255,255,.6));
+    --fp-grad-glass:     linear-gradient(135deg, rgba(255,255,255,.25) 0%, rgba(255,255,255,.10) 100%);
+
+    /* Superficie */
+    --fp-fondo:           #f0f4f3;
+    --fp-superficie:      #ffffff;
+    --fp-superficie-2:    #f5f8f7;
+    --fp-texto:           #131e1d;
+    --fp-texto-suave:     #5a6e6c;
+    --fp-borde:           #dde5e4;
+
+    /* Sombras */
+    --fp-sombra-xs:  0 1px 3px rgba(13,158,138,.06);
+    --fp-sombra-sm:  0 2px 8px rgba(0,0,0,.06), 0 0 0 1px rgba(0,0,0,.03);
+    --fp-sombra-md:  0 8px 24px rgba(13,158,138,.12), 0 2px 8px rgba(0,0,0,.06);
+    --fp-sombra-lg:  0 20px 48px rgba(13,158,138,.16), 0 4px 16px rgba(0,0,0,.08);
+
+    /* Navbar */
+    --fp-navbar-bg:        #0d9e8a;
+    --fp-navbar-texto:     #ffffff;
+    --fp-navbar-link-hover: rgba(255,255,255,.18);
+
+    /* Velocidades */
+    --fp-dur-fast:    .14s;
+    --fp-dur-normal:  .24s;
+    --fp-dur-slow:    .38s;
+    --fp-ease:        cubic-bezier(.25,.46,.45,.94);
+    --fp-ease-spring: cubic-bezier(.34,1.56,.64,1);
+
+    /* Bootstrap overrides */
+    --bs-body-font-family: 'Manrope', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --bs-body-bg:          var(--fp-fondo);
+    --bs-body-color:       var(--fp-texto);
+    --bs-border-color:     var(--fp-borde);
+    --bs-link-color-rgb:   var(--fp-acento-rgb);
+    --bs-border-radius:    .625rem;
+    --bs-border-radius-sm: .4rem;
+    --bs-border-radius-lg: .875rem;
+}
+
+/* --------------------------------------------------------------------------
+   2. Modo oscuro
+   -------------------------------------------------------------------------- */
+[data-tema="oscuro"] {
+    --fp-fondo:        #0c1110;
+    --fp-superficie:   #161c1b;
+    --fp-superficie-2: #1e2625;
+    --fp-texto:        #e2eae9;
+    --fp-texto-suave:  #7a9491;
+    --fp-borde:        #2a3432;
+    --fp-acento-claro: #0d2e29;
+    --fp-grad-card:    linear-gradient(145deg, rgba(30,38,37,.95), rgba(22,28,27,.8));
+
+    --fp-sombra-xs:  0 1px 3px rgba(0,0,0,.4);
+    --fp-sombra-sm:  0 2px 8px rgba(0,0,0,.4), 0 0 0 1px rgba(255,255,255,.03);
+    --fp-sombra-md:  0 8px 24px rgba(0,0,0,.5);
+    --fp-sombra-lg:  0 20px 48px rgba(0,0,0,.6);
+
+    --bs-body-bg:      var(--fp-fondo);
+    --bs-body-color:   var(--fp-texto);
+    --bs-border-color: var(--fp-borde);
+}
+
+/* --------------------------------------------------------------------------
+   3. Base
+   -------------------------------------------------------------------------- */
+*, *::before, *::after { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+    font-family: var(--bs-body-font-family);
+    background-color: var(--fp-fondo);
+    color: var(--fp-texto);
+    transition: background-color var(--fp-dur-normal) var(--fp-ease),
+                color var(--fp-dur-normal) var(--fp-ease);
+    -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6,
+.h1, .h2, .h3, .h4, .h5, .h6 {
+    font-weight: 700;
+    letter-spacing: -.022em;
+    text-wrap: balance;
+    color: var(--fp-texto);
+}
+
+table td, table th, .tabular {
+    font-variant-numeric: tabular-nums;
+}
+
+/* --------------------------------------------------------------------------
+   4. Bootstrap color overrides
+   -------------------------------------------------------------------------- */
+.bg-primary     { background-color: rgba(var(--fp-acento-rgb), var(--bs-bg-opacity, 1)) !important; }
+.text-primary   { color: rgba(var(--fp-acento-rgb), var(--bs-text-opacity, 1)) !important; }
+.border-primary { border-color: rgba(var(--fp-acento-rgb), var(--bs-border-opacity, 1)) !important; }
+
+.btn-primary {
+    --bs-btn-bg:              var(--fp-acento);
+    --bs-btn-border-color:    var(--fp-acento);
+    --bs-btn-hover-bg:        var(--fp-acento-oscuro);
+    --bs-btn-hover-border-color: var(--fp-acento-oscuro);
+    --bs-btn-active-bg:       var(--fp-acento-oscuro);
+    --bs-btn-active-border-color: var(--fp-acento-oscuro);
+    --bs-btn-disabled-bg:     var(--fp-acento);
+    font-weight: 600;
+}
+
+.btn-outline-primary {
+    --bs-btn-color:        var(--fp-acento);
+    --bs-btn-border-color: var(--fp-acento);
+    --bs-btn-hover-bg:     var(--fp-acento);
+    --bs-btn-hover-border-color: var(--fp-acento);
+    --bs-btn-active-bg:    var(--fp-acento-oscuro);
+}
+
+/* --------------------------------------------------------------------------
+   5. Navbar — glassmorphism sobre gradiente
+   -------------------------------------------------------------------------- */
+.navbar.bg-primary,
+.navbar {
+    background: var(--fp-grad-hero) !important;
+    box-shadow: 0 2px 20px rgba(13,158,138,.25);
+    padding-top: .55rem;
+    padding-bottom: .55rem;
+    backdrop-filter: blur(8px);
+}
+
+.navbar-brand {
+    font-weight: 800;
+    font-size: 1.05rem;
+    letter-spacing: -.018em;
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    text-shadow: 0 1px 8px rgba(0,0,0,.15);
+}
+
+.navbar .nav-link {
+    color: rgba(255,255,255,.82) !important;
+    border-radius: var(--bs-border-radius-sm);
+    padding: .32rem .62rem;
+    font-size: .875rem;
+    font-weight: 500;
+    transition: background var(--fp-dur-fast), color var(--fp-dur-fast),
+                transform var(--fp-dur-fast);
+}
+.navbar .nav-link:hover {
+    color: #fff !important;
+    background: var(--fp-navbar-link-hover);
+    transform: translateY(-1px);
+}
+.navbar .nav-link.active {
+    color: #fff !important;
+    background: rgba(255,255,255,.2);
+    font-weight: 700;
+}
+
+.navbar .dropdown-menu {
+    background: var(--fp-superficie);
+    border: 1px solid var(--fp-borde);
+    box-shadow: var(--fp-sombra-lg);
+    border-radius: var(--bs-border-radius-lg);
+    padding: .4rem;
+    min-width: 14rem;
+    animation: menuFadeIn var(--fp-dur-normal) var(--fp-ease);
+}
+
+@keyframes menuFadeIn {
+    from { opacity: 0; transform: translateY(-6px) scale(.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.navbar .dropdown-item {
+    border-radius: var(--bs-border-radius-sm);
+    font-size: .875rem;
+    padding: .45rem .8rem;
+    color: var(--fp-texto);
+    font-weight: 500;
+    transition: background var(--fp-dur-fast), color var(--fp-dur-fast),
+                transform var(--fp-dur-fast);
+}
+.navbar .dropdown-item:hover {
+    background: var(--fp-acento-claro);
+    color: var(--fp-acento);
+    transform: translateX(2px);
+}
+[data-tema="oscuro"] .navbar .dropdown-item:hover {
+    background: var(--fp-acento-claro);
+    color: #4dd4b8;
+}
+
+.nav-badge {
+    font-size: .65rem; padding: .15em .4em;
+    border-radius: 99px; font-weight: 700;
+    vertical-align: middle; line-height: 1;
+    display: inline-block; min-width: 1.2em; text-align: center;
+}
+
+.btn-tema {
+    background: rgba(255,255,255,.12);
+    border: 1px solid rgba(255,255,255,.25);
+    color: #fff;
+    border-radius: var(--bs-border-radius-sm);
+    padding: .3rem .55rem;
+    font-size: .85rem;
+    cursor: pointer;
+    transition: background var(--fp-dur-fast), border-color var(--fp-dur-fast),
+                transform var(--fp-dur-fast);
+    line-height: 1;
+}
+.btn-tema:hover {
+    background: rgba(255,255,255,.22);
+    border-color: rgba(255,255,255,.5);
+    transform: translateY(-1px);
+}
+
+/* Controles de accesibilidad (tamaño de fuente) */
+.btn-grupo-accesibilidad {
+    display: inline-flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: var(--bs-border-radius-sm);
+    overflow: hidden;
+    line-height: 1;
+}
+
+.btn-grupo-accesibilidad .btn-acc {
+    background: transparent;
+    border: none;
+    color: #ffffff;
+    padding: 0.32rem 0.55rem;
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: background var(--fp-dur-fast), opacity var(--fp-dur-fast);
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+}
+
+.btn-grupo-accesibilidad .btn-acc:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.22);
+}
+
+.btn-grupo-accesibilidad .btn-acc:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.btn-grupo-accesibilidad .separador-acc {
+    width: 1px;
+    height: 14px;
+    background: rgba(255, 255, 255, 0.25);
+}
+
+
+/* --------------------------------------------------------------------------
+   6. Cards — glassmorphism + hover lift
+   -------------------------------------------------------------------------- */
+.card {
+    background: var(--fp-superficie);
+    border: 1px solid var(--fp-borde);
+    box-shadow: var(--fp-sombra-sm);
+    border-radius: var(--bs-border-radius-lg);
+    transition: box-shadow var(--fp-dur-normal) var(--fp-ease),
+                transform var(--fp-dur-normal) var(--fp-ease),
+                border-color var(--fp-dur-normal);
+}
+.card:hover {
+    box-shadow: var(--fp-sombra-md);
+    border-color: rgba(var(--fp-acento-rgb), .2);
+}
+.card-body  { padding: 1.25rem; }
+.card-header {
+    background: var(--fp-superficie-2);
+    border-bottom: 1px solid var(--fp-borde);
+    padding: .875rem 1.25rem;
+    font-weight: 600;
+    font-size: .875rem;
+    border-radius: var(--bs-border-radius-lg) var(--bs-border-radius-lg) 0 0 !important;
+}
+
+/* Tarjetas de módulo — glassmorphism + levitan */
+.card-modulo {
+    cursor: default;
+    background: var(--fp-grad-card);
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(var(--fp-acento-rgb), .1);
+    transition: transform var(--fp-dur-normal) var(--fp-ease-spring),
+                box-shadow var(--fp-dur-normal) var(--fp-ease),
+                border-color var(--fp-dur-normal);
+}
+.card-modulo:hover {
+    transform: translateY(-5px) scale(1.005);
+    box-shadow: var(--fp-sombra-lg);
+    border-color: rgba(var(--fp-acento-rgb), .3);
+}
+[data-tema="oscuro"] .card-modulo {
+    background: var(--fp-grad-card);
+}
+
+/* --------------------------------------------------------------------------
+   7. Indicadores del panel — diseño premium con gradientes
+   -------------------------------------------------------------------------- */
+.indicador {
+    border-left: 4px solid transparent;
+    position: relative;
+    overflow: hidden;
+}
+.indicador::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, transparent 60%, rgba(var(--fp-acento-rgb),.04) 100%);
+    pointer-events: none;
+}
+.indicador-danger    { border-left-color: #dc3545; }
+.indicador-warning   { border-left-color: #e6a817; }
+.indicador-success   { border-left-color: #198754; }
+.indicador-primary   { border-left-color: var(--fp-acento); }
+.indicador-secondary { border-left-color: #adb5bd; }
+
+.indicador .valor-indicador {
+    font-size: 1.85rem;
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -.04em;
+    font-variant-numeric: tabular-nums;
+    background: linear-gradient(135deg, var(--fp-texto) 0%, var(--fp-texto-suave) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+.indicador-primary .valor-indicador {
+    background: linear-gradient(135deg, var(--fp-acento) 0%, var(--fp-acento-oscuro) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+.indicador-danger .valor-indicador {
+    background: linear-gradient(135deg, #dc3545 0%, #a01a25 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+.indicador-warning .valor-indicador {
+    background: linear-gradient(135deg, #e6a817 0%, #c47e0a 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+.indicador-success .valor-indicador {
+    background: linear-gradient(135deg, #198754 0%, #0f5535 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Ícono de indicador */
+.indicador-icon {
+    width: 2.8rem; height: 2.8rem;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: .75rem;
+    font-size: 1.3rem;
+    flex-shrink: 0;
+}
+.indicador-primary .indicador-icon   { background: rgba(var(--fp-acento-rgb),.12); color: var(--fp-acento); }
+.indicador-danger  .indicador-icon   { background: rgba(220,53,69,.12); color: #dc3545; }
+.indicador-warning .indicador-icon   { background: rgba(230,168,23,.12); color: #e6a817; }
+.indicador-success .indicador-icon   { background: rgba(25,135,84,.12); color: #198754; }
+.indicador-secondary .indicador-icon { background: rgba(173,181,189,.12); color: #6c757d; }
+
+/* --------------------------------------------------------------------------
+   8. Tablas
+   -------------------------------------------------------------------------- */
+.table {
+    color: var(--fp-texto);
+    --bs-table-bg: transparent;
+    --bs-table-border-color: var(--fp-borde);
+}
+.table thead th {
+    font-size: .72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    color: var(--fp-texto-suave);
+    border-bottom: 2px solid var(--fp-borde);
+    padding-bottom: .6rem;
+}
+.table-hover > tbody > tr {
+    transition: background var(--fp-dur-fast);
+}
+.table-hover > tbody > tr:hover > * {
+    background-color: var(--fp-acento-claro);
+    color: var(--fp-texto);
+}
+[data-tema="oscuro"] .table-hover > tbody > tr:hover > * {
+    background-color: var(--fp-acento-claro);
+}
+.table-striped > tbody > tr:nth-of-type(odd) > * {
+    --bs-table-accent-bg: var(--fp-superficie-2);
+}
+
+/* --------------------------------------------------------------------------
+   9. Formularios
+   -------------------------------------------------------------------------- */
+.form-control, .form-select {
+    background-color: var(--fp-superficie);
+    border-color: var(--fp-borde);
+    color: var(--fp-texto);
+    border-radius: var(--bs-border-radius-sm);
+    transition: border-color var(--fp-dur-fast), box-shadow var(--fp-dur-fast),
+                transform var(--fp-dur-fast);
+}
+.form-control:focus, .form-select:focus {
+    background-color: var(--fp-superficie);
+    border-color: var(--fp-acento);
+    color: var(--fp-texto);
+    box-shadow: 0 0 0 3px rgba(var(--fp-acento-rgb), .15);
+    transform: translateY(-1px);
+}
+[data-tema="oscuro"] .form-control,
+[data-tema="oscuro"] .form-select {
+    background-color: var(--fp-superficie-2);
+    color: var(--fp-texto);
+    border-color: var(--fp-borde);
+}
+[data-tema="oscuro"] .form-control:focus,
+[data-tema="oscuro"] .form-select:focus {
+    background-color: var(--fp-superficie-2);
+}
+.form-label { font-weight: 600; font-size: .875rem; margin-bottom: .35rem; }
+.input-group-text {
+    background: var(--fp-superficie-2);
+    border-color: var(--fp-borde);
+    color: var(--fp-texto-suave);
+}
+
+/* --------------------------------------------------------------------------
+   10. Botones — micro-animaciones premium
+   -------------------------------------------------------------------------- */
+.btn {
+    font-weight: 600;
+    border-radius: var(--bs-border-radius-sm);
+    transition: background var(--fp-dur-fast), border-color var(--fp-dur-fast),
+                color var(--fp-dur-fast), transform var(--fp-dur-fast),
+                box-shadow var(--fp-dur-fast);
+}
+.btn:not(:disabled):hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,.1); }
+.btn:active { transform: translateY(1px) !important; box-shadow: none !important; }
+.btn-lg { border-radius: var(--bs-border-radius); padding: .7rem 1.4rem; font-size: 1rem; }
+
+/* --------------------------------------------------------------------------
+   11. Alerts y mensajes
+   -------------------------------------------------------------------------- */
+.alert {
+    border: none;
+    border-left: 4px solid;
+    border-radius: var(--bs-border-radius-sm);
+    font-size: .9rem;
+    animation: alertSlideIn var(--fp-dur-normal) var(--fp-ease);
+}
+/* alertSlideIn: solo opacidad, sin desplazamiento vertical para evitar el efecto
+   de "carga lenta" al navegar entre páginas. Las alertas de error/éxito sí usan
+   el fade corto para destacar sin molestar. */
+@keyframes alertSlideIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+.alert-success  { border-left-color: #198754; background: #d1e7dd; }
+.alert-danger   { border-left-color: #dc3545; background: #f8d7da; }
+.alert-warning  { border-left-color: #e6a817; background: #fff3cd; }
+.alert-info     { border-left-color: #0dcaf0; background: #cff4fc; }
+[data-tema="oscuro"] .alert-success  { background: #0f2d1f; color: #75c99b; }
+[data-tema="oscuro"] .alert-danger   { background: #2d0f0f; color: #f48585; }
+[data-tema="oscuro"] .alert-warning  { background: #2d2208; color: #f5c040; }
+[data-tema="oscuro"] .alert-info     { background: #0a2535; color: #60d4ef; }
+
+/* --------------------------------------------------------------------------
+   12. Badges
+   -------------------------------------------------------------------------- */
+.badge { font-weight: 600; letter-spacing: .02em; border-radius: .3rem; }
+
+/* --------------------------------------------------------------------------
+   13. Auth pages
+   -------------------------------------------------------------------------- */
+.auth-card  { max-width: 420px; margin: auto; }
+.auth-logo  { font-size: 2rem; color: var(--fp-acento); margin-bottom: .5rem; }
+
+/* --------------------------------------------------------------------------
+   14. Panel inicio — hero banner de bienvenida
+   -------------------------------------------------------------------------- */
+.panel-hero {
+    background: var(--fp-grad-hero);
+    border-radius: var(--bs-border-radius-lg);
+    padding: 1.75rem 2rem;
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--fp-sombra-md);
+}
+.panel-hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/svg%3E");
+    pointer-events: none;
+}
+.panel-hero h1          { color: #fff; text-shadow: 0 1px 8px rgba(0,0,0,.15); margin: 0; }
+.panel-hero p           { color: rgba(255,255,255,.8); margin: 0; }
+.panel-hero .btn-hero   {
+    background: rgba(255,255,255,.2);
+    border: 1px solid rgba(255,255,255,.35);
+    color: #fff;
+    font-weight: 700;
+    backdrop-filter: blur(4px);
+    transition: background var(--fp-dur-fast), transform var(--fp-dur-fast);
+}
+.panel-hero .btn-hero:hover {
+    background: rgba(255,255,255,.3);
+    transform: translateY(-1px);
+    color: #fff;
+}
+
+/* --------------------------------------------------------------------------
+   15. Mini-chart wrap
+   -------------------------------------------------------------------------- */
+.chart-wrap {
+    position: relative;
+    height: 220px;
+}
+.chart-wrap canvas { width: 100% !important; }
+
+/* --------------------------------------------------------------------------
+   16. Punto de venta
+   -------------------------------------------------------------------------- */
+.pventa-carrito {
+    background: var(--fp-superficie);
+    border: 1px solid var(--fp-borde);
+    border-radius: var(--bs-border-radius-lg);
+    min-height: 300px;
+}
+.pventa-total {
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: -.04em;
+    font-variant-numeric: tabular-nums;
+    color: var(--fp-acento);
+}
+.pventa-linea { transition: background var(--fp-dur-fast), border-radius var(--fp-dur-fast); }
+.pventa-linea:hover { background: var(--fp-acento-claro); border-radius: .375rem; }
+
+.barcode-input {
+    font-family: 'Courier New', monospace;
+    font-size: 1.1rem;
+    letter-spacing: .05em;
+    border-width: 2px;
+}
+.barcode-input:focus { border-color: var(--fp-acento); }
+
+/* --------------------------------------------------------------------------
+   17. Utilities y micro-detalles
+   -------------------------------------------------------------------------- */
+:focus-visible {
+    outline: 2px solid var(--fp-acento);
+    outline-offset: 2px;
+}
+
+.saltar-contenido {
+    position: absolute; left: -9999px; z-index: 1080;
+}
+.saltar-contenido:focus {
+    left: 1rem; top: 1rem;
+    padding: .5rem 1rem;
+    background: var(--fp-superficie);
+    border-radius: var(--bs-border-radius-sm);
+    box-shadow: var(--fp-sombra-md);
+    color: var(--fp-texto);
+}
+
+.font-mono { font-family: 'Courier New', monospace; font-size: .9em; letter-spacing: .02em; font-variant-numeric: tabular-nums; }
+.text-muted { color: var(--fp-texto-suave) !important; }
+
+.seccion-label {
+    font-size: .7rem;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--fp-texto-suave);
+    margin-bottom: .75rem;
+}
+
+/* Ícono de módulo en panel */
+.icono-modulo {
+    width: 2.6rem; height: 2.6rem;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: .7rem;
+    background: linear-gradient(135deg, var(--fp-acento-claro), rgba(var(--fp-acento-rgb),.08));
+    color: var(--fp-acento);
+    font-size: 1.2rem;
+    flex-shrink: 0;
+    transition: transform var(--fp-dur-normal) var(--fp-ease-spring),
+                background var(--fp-dur-normal);
+}
+.card-modulo:hover .icono-modulo {
+    transform: scale(1.12) rotate(-5deg);
+    background: linear-gradient(135deg, rgba(var(--fp-acento-rgb),.2), var(--fp-acento-claro));
+}
+[data-tema="oscuro"] .icono-modulo { background: var(--fp-acento-claro); color: #4dd4b8; }
+
+.estado-pill {
+    display: inline-flex; align-items: center; gap: .3em;
+    padding: .2em .65em; border-radius: 99px;
+    font-size: .78rem; font-weight: 600;
+}
+.estado-pill::before { content: ''; width: .45em; height: .45em; border-radius: 50%; background: currentColor; }
+
+.td-acciones { white-space: nowrap; width: 1%; }
+
+.empty-state {
+    text-align: center; padding: 3rem 1rem;
+    color: var(--fp-texto-suave);
+}
+.empty-state i { font-size: 3rem; opacity: .3; display: block; margin-bottom: 1rem; }
+
+/* Skeleton loader */
+@keyframes skeleton-shimmer {
+    0%   { background-position: -400px 0; }
+    100% { background-position: 400px 0; }
+}
+.skeleton {
+    background: linear-gradient(90deg,
+        var(--fp-superficie-2) 25%,
+        var(--fp-borde) 50%,
+        var(--fp-superficie-2) 75%);
+    background-size: 800px 100%;
+    animation: skeleton-shimmer 1.5s infinite;
+    border-radius: var(--bs-border-radius-sm);
+}
+
+/* Scroll personalizado */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--fp-fondo); }
+::-webkit-scrollbar-thumb { background: var(--fp-borde); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: var(--fp-texto-suave); }
+
+/* --------------------------------------------------------------------------
+   18. Responsive
+   -------------------------------------------------------------------------- */
+@media (max-width: 767.98px) {
+    .card-body                  { padding: 1rem; }
+    .indicador .valor-indicador { font-size: 1.4rem; }
+    .pventa-total               { font-size: 1.5rem; }
+    .chart-wrap                 { height: 170px; }
+    h1, .h1                     { font-size: 1.4rem; }
+    .panel-hero                 { padding: 1.25rem; }
+}
+
+/* --------------------------------------------------------------------------
+   19. Motion preferences
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        transition-duration: .01ms !important;
+        animation-duration:  .01ms !important;
+    }
+}
+
+/* ==========================================================================
+   20. MODERN ANIMATIONS — Slide-in, Fade, Stagger
+   ========================================================================== */
+
+/* --- Page entrance --- */
+@keyframes fp-pageIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+body {
+  /* Sin animación: el body es el contenedor raíz y no debe desplazarse */
+}
+
+/* --- Slide-up entrance (scroll-triggered via .fp-visible) --- */
+@keyframes fp-slideUp {
+  from { opacity: 0; transform: translateY(40px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fp-slideRight {
+  from { opacity: 0; transform: translateX(-40px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes fp-slideLeft {
+  from { opacity: 0; transform: translateX(40px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes fp-scaleIn {
+  from { opacity: 0; transform: scale(.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes fp-slideDown {
+  from { opacity: 0; transform: translateY(-30px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Elements waiting to be revealed */
+.fp-animate {
+  opacity: 0;
+}
+.fp-animate.fp-visible {
+  animation-fill-mode: both;
+  animation-duration: .6s;
+  animation-timing-function: cubic-bezier(.22,1,.36,1);
+}
+.fp-animate.fp-visible.fp-slide-up    { animation-name: fp-slideUp; }
+.fp-animate.fp-visible.fp-slide-right { animation-name: fp-slideRight; }
+.fp-animate.fp-visible.fp-slide-left  { animation-name: fp-slideLeft; }
+.fp-animate.fp-visible.fp-scale-in    { animation-name: fp-scaleIn; }
+.fp-animate.fp-visible.fp-slide-down  { animation-name: fp-slideDown; }
+
+/* Stagger delays for child elements */
+.fp-stagger > *:nth-child(1)  { animation-delay: 0s; }
+.fp-stagger > *:nth-child(2)  { animation-delay: .07s; }
+.fp-stagger > *:nth-child(3)  { animation-delay: .14s; }
+.fp-stagger > *:nth-child(4)  { animation-delay: .21s; }
+.fp-stagger > *:nth-child(5)  { animation-delay: .28s; }
+.fp-stagger > *:nth-child(6)  { animation-delay: .35s; }
+.fp-stagger > *:nth-child(7)  { animation-delay: .42s; }
+.fp-stagger > *:nth-child(8)  { animation-delay: .49s; }
+.fp-stagger > *:nth-child(9)  { animation-delay: .56s; }
+.fp-stagger > *:nth-child(10) { animation-delay: .63s; }
+.fp-stagger > *:nth-child(11) { animation-delay: .70s; }
+.fp-stagger > *:nth-child(12) { animation-delay: .77s; }
+
+/* ==========================================================================
+   21. HERO BANNER — Animated gradient + floating particles
+   ========================================================================== */
+@keyframes fp-gradientShift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.panel-hero {
+  background: linear-gradient(-45deg, #0d9e8a, #136f63, #059669, #047857, #0a4f47);
+  background-size: 200% 200%;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Floating particles on hero (Static to avoid repaint jumps) */
+.panel-hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 20% 80%, rgba(255,255,255,.08) 0%, transparent 60%),
+    radial-gradient(circle at 80% 20%, rgba(255,255,255,.06) 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, rgba(255,255,255,.04) 0%, transparent 40%);
+  pointer-events: none;
+}
+
+@keyframes fp-floatParticles {
+  0%   { transform: translateY(0) translateX(0); }
+  100% { transform: translateY(-15px) translateX(10px); }
+}
+
+/* ==========================================================================
+   22. NAVBAR — Premium glass feel + reveal animation
+   ========================================================================== */
+.navbar.bg-primary,
+.navbar {
+  background: linear-gradient(135deg, rgba(13,158,138,.95) 0%, rgba(19,111,99,.95) 60%, rgba(10,79,71,.95) 100%) !important;
+  backdrop-filter: blur(20px) saturate(1.4);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  box-shadow: 0 2px 20px rgba(13,158,138,.25), 0 1px 0 rgba(255,255,255,.08) inset;
+  /* Sin animación de deslizamiento: el nav es sticky y no debe re-aparecer */
+}
+
+/* Active nav pill glow */
+.navbar .nav-link.active {
+  background: rgba(255,255,255,.18);
+  box-shadow: 0 0 15px rgba(255,255,255,.1);
+}
+
+/* ==========================================================================
+   23. CARDS — Enhanced glassmorphism + shimmer border
+   ========================================================================== */
+
+/* Shimmer border on hover */
+.card-modulo {
+  position: relative;
+  overflow: hidden;
+}
+.card-modulo::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: conic-gradient(from 0deg, transparent 0%, rgba(var(--fp-acento-rgb),.15) 25%, transparent 50%);
+  opacity: 0;
+  transition: opacity .4s;
+  animation: fp-shimmerRotate 4s linear infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+.card-modulo:hover::before {
+  opacity: 1;
+}
+.card-modulo > * {
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes fp-shimmerRotate {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* Glowing border on hover */
+.card-modulo:hover {
+  transform: translateY(-6px) scale(1.01);
+  box-shadow: 0 20px 40px rgba(13,158,138,.2), 0 0 0 1px rgba(var(--fp-acento-rgb),.2);
+}
+
+/* ==========================================================================
+   24. INDICADORES — Pulse animation for critical values
+   ========================================================================== */
+@keyframes fp-pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.04); }
+}
+
+.indicador-danger .valor-indicador {
+  animation: fp-pulse 2s ease-in-out infinite;
+}
+
+/* ==========================================================================
+   25. BUTTONS — Ripple effect
+   ========================================================================== */
+.btn-primary {
+  position: relative;
+  overflow: hidden;
+}
+.btn-primary::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle, rgba(255,255,255,.25) 10%, transparent 50%);
+  transform: scale(0);
+  transition: transform .4s;
+  pointer-events: none;
+}
+.btn-primary:active::after {
+  transform: scale(3);
+  transition: transform 0s;
+}
+
+/* ==========================================================================
+   26. LOGIN PAGE — Full-page gradient with glass card
+   ========================================================================== */
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(-45deg, #0d9e8a, #136f63, #047857, #0a4f47);
+  background-size: 300% 300%;
+  animation: fp-gradientShift 10s ease infinite;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Animated floating orbs on login */
+.login-page::before,
+.login-page::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: .3;
+  pointer-events: none;
+}
+.login-page::before {
+  width: 400px; height: 400px;
+  background: rgba(13,158,138,.6);
+  top: -100px; left: -100px;
+  animation: fp-floatOrb1 10s ease-in-out infinite alternate;
+}
+.login-page::after {
+  width: 300px; height: 300px;
+  background: rgba(4,120,87,.5);
+  bottom: -80px; right: -80px;
+  animation: fp-floatOrb2 8s ease-in-out infinite alternate;
+}
+
+@keyframes fp-floatOrb1 {
+  0%   { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(100px, 60px) scale(1.2); }
+}
+@keyframes fp-floatOrb2 {
+  0%   { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(-80px, -50px) scale(1.15); }
+}
+
+.login-card {
+  max-width: 440px;
+  width: 100%;
+  background: rgba(255,255,255,.12);
+  backdrop-filter: blur(24px) saturate(1.4);
+  -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  border: 1px solid rgba(255,255,255,.2);
+  border-radius: 1.2rem;
+  box-shadow: 0 20px 60px rgba(0,0,0,.3), 0 0 0 1px rgba(255,255,255,.1) inset;
+  padding: 2.5rem;
+  position: relative;
+  z-index: 1;
+  animation: fp-scaleIn .6s cubic-bezier(.22,1,.36,1) both;
+  color: #fff;
+}
+
+.login-card .form-control {
+  background: rgba(255,255,255,.1);
+  border: 1px solid rgba(255,255,255,.2);
+  color: #fff;
+  border-radius: .6rem;
+  padding: .75rem 1rem;
+  font-size: .95rem;
+  transition: all .2s;
+}
+.login-card .form-control::placeholder { color: rgba(255,255,255,.5); }
+.login-card .form-control:focus {
+  background: rgba(255,255,255,.15);
+  border-color: rgba(255,255,255,.5);
+  box-shadow: 0 0 0 3px rgba(255,255,255,.1);
+  color: #fff;
+  transform: none;
+}
+.login-card .form-label { color: rgba(255,255,255,.8); font-weight: 500; }
+
+.login-card .btn-primary {
+  background: rgba(255,255,255,.2);
+  border: 1px solid rgba(255,255,255,.3);
+  font-size: 1rem;
+  padding: .75rem;
+  border-radius: .6rem;
+  font-weight: 700;
+  letter-spacing: .02em;
+  transition: all .2s;
+}
+.login-card .btn-primary:hover {
+  background: rgba(255,255,255,.3);
+  border-color: rgba(255,255,255,.5);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0,0,0,.2);
+}
+
+.login-logo {
+  font-size: 3rem;
+  margin-bottom: .5rem;
+  text-shadow: 0 2px 20px rgba(0,0,0,.3);
+}
+.login-title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: .3rem;
+  letter-spacing: -.02em;
+}
+.login-subtitle {
+  color: rgba(255,255,255,.6);
+  font-size: .9rem;
+  margin-bottom: 1.5rem;
+}
+
+/* ==========================================================================
+   27. FOOTER — Subtle glass effect
+   ========================================================================== */
+footer {
+  backdrop-filter: blur(10px);
+  /* Sin deslizamiento: aparece directamente */
+  animation: fp-pageIn .2s ease-out both;
+}
+
+/* ==========================================================================
+   28. TABLE ROW — Slide-in on appear
+   ========================================================================== */
+.table-hover > tbody > tr {
+  /* Sin animación de deslizamiento en filas para navegación más fluida */
+  animation: none;
+}
+.table-hover > tbody > tr:nth-child(1)  { animation-delay: 0s; }
+.table-hover > tbody > tr:nth-child(2)  { animation-delay: 0s; }
+.table-hover > tbody > tr:nth-child(3)  { animation-delay: 0s; }
+.table-hover > tbody > tr:nth-child(4)  { animation-delay: 0s; }
+.table-hover > tbody > tr:nth-child(5)  { animation-delay: 0s; }
+.table-hover > tbody > tr:nth-child(6)  { animation-delay: 0s; }
+.table-hover > tbody > tr:nth-child(7)  { animation-delay: 0s; }
+.table-hover > tbody > tr:nth-child(8)  { animation-delay: 0s; }
+.table-hover > tbody > tr:nth-child(9)  { animation-delay: 0s; }
+.table-hover > tbody > tr:nth-child(10) { animation-delay: 0s; }
+
+/* ==========================================================================
+   29. COUNTER ANIMATION (for values)
+   ========================================================================== */
+@keyframes fp-countUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.valor-indicador {
+  /* Sin animación de cuenta: valor visible inmediatamente */
+  animation: none;
+}
+
+/* ==========================================================================
+   30. SMOOTH PAGE CONTENT TRANSITIONS
+   Al cambiar de página el contenido simplemente aparece sin desplazamiento.
+   ========================================================================== */
+main {
+  /* Sin animación de deslizamiento: el contenido aparece ya posicionado */
+  animation: fp-pageIn .18s ease-out both;
+}
+
+/* Espacio de trabajo */
+:root:not([data-tema="oscuro"]) {
+  --fp-acento: #14745d;
+  --fp-acento-rgb: 20, 116, 93;
+  --fp-acento-oscuro: #105944;
+  --fp-fondo: #f4f5ef;
+  --fp-borde: #dbe1d9;
+}
+#navPrincipal {
+  position: sticky;
+  top: 0;
+  z-index: 1030;
+  background: #173731 !important;
+  box-shadow: none;
+}
+.marca-farmacia {
+  display: inline-grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: .65rem;
+  margin-right: .2rem;
+  background: #c9f19d;
+  color: #173731;
+  text-shadow: none;
+}
+.cabecera-inicio {
+  isolation: isolate;
+  overflow: hidden;
+  position: relative;
+  padding: clamp(1.4rem, 4vw, 3rem);
+  border-radius: 1.25rem;
+  background: #163f35;
+  color: #eff9ec;
+}
+.cabecera-inicio::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: 0 0 0 45%;
+  background: repeating-radial-gradient(ellipse at 102% 120%, transparent 0 19px, #91c49c55 20px 21px, transparent 22px 33px);
+  mask-image: linear-gradient(to right, transparent, black 55%);
+}
+.fecha-panel {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  font-size: .85rem;
+  color: #cbe4d2;
+  font-variant-numeric: tabular-nums;
+}
+.cabecera-inicio h1 {
+  color: inherit;
+  font: 500 clamp(2.3rem, 5vw, 4.1rem)/1.08 Georgia, serif;
+  letter-spacing: -.045em;
+  margin: .75rem 0 .3rem;
+  overflow-wrap: anywhere;
+}
+.cabecera-inicio p { color: #d5e8da; margin-bottom: 1rem; }
+.acceso-panel {
+  --bs-btn-bg: #d3f4af;
+  --bs-btn-color: #153d30;
+  --bs-btn-hover-color: #153d30;
+  --bs-btn-hover-bg: #e5ffca;
+  border-radius: 2rem;
+  font-weight: 700;
+}
+.titulo-panel { margin-bottom: .95rem; font-size: 1.2rem; }
+.card-modulo { border-radius: 1rem; box-shadow: none; }
+.card-modulo::before { content: none; }
+.card-modulo:hover { transform: none; border-color: var(--fp-acento); box-shadow: var(--fp-sombra-xs); }
+.card-modulo .card-body { padding: 1.25rem; }
+.card-modulo:hover .icono-modulo { transform: none; }
+.card-modulo .btn { border-radius: 2rem; padding-inline: .9rem; }
+.form-control, .form-select { border-radius: .65rem; }
+#navPrincipal .navbar-toggler { background-color: #d3f4af; }
+@media (max-width: 1199.98px) {
+  #navMenu.show { max-height: 80dvh; overflow-y: auto; }
+}
+

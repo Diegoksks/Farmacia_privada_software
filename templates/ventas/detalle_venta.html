@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block title %}Venta #{{ venta.pk }}{% endblock %}
+{% block container_style_attr %}style="max-width: 640px;"{% endblock %}
+{% block content %}
+<div class="card shadow-sm">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-start">
+      <h1 class="h4">Venta #{{ venta.pk }}</h1>
+      <span class="badge {% if venta.estado == 'ANULADA' %}bg-danger{% else %}bg-success{% endif %}">{{ venta.get_estado_display }}</span>
+    </div>
+
+    {% for message in messages %}<div class="alert alert-{{ message.tags|default:'info' }} py-2">{{ message }}</div>{% endfor %}
+
+    {% if venta.documento_tributario %}
+      <p class="text-muted">
+        {{ venta.documento_tributario }} — {{ venta.documento_tributario.fecha_emision|date:"d-m-Y H:i" }}
+        <a href="{% url 'ventas:imprimir_documento' venta.pk %}" target="_blank" class="btn btn-sm btn-outline-primary ms-2">
+          Imprimir
+        </a>
+      </p>
+    {% endif %}
+    <p>Cliente: {% if venta.cliente %}{{ venta.cliente.nombre_completo }} ({{ venta.cliente.rut }}){% else %}Sin cliente{% endif %}</p>
+    <p>Vendedor: {{ venta.vendedor }} — Método de pago: {{ venta.get_metodo_pago_display }}</p>
+
+    <table class="table table-sm">
+      <thead><tr><th>Producto</th><th>Cant.</th><th class="text-end">Precio unit.</th><th>Convenio</th><th class="text-end">Subtotal</th></tr></thead>
+      <tbody>
+        {% for detalle in venta.detalles.all %}
+          <tr>
+            <td>{{ detalle.producto.nombre }}</td>
+            <td>{{ detalle.cantidad }}</td>
+            <td class="text-end">
+              {% if detalle.convenio %}<span class="text-decoration-line-through text-muted small">${{ detalle.precio_lista }}</span> {% endif %}
+              ${{ detalle.precio_unitario }}
+            </td>
+            <td>{% if detalle.convenio %}{{ detalle.convenio.nombre }}{% else %}—{% endif %}</td>
+            <td class="text-end">${{ detalle.subtotal }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div class="text-end fw-bold mb-3">Total: ${{ venta.total }} CLP</div>
+
+    {% if venta.estado == 'ANULADA' %}
+      <p class="text-danger small">Anulada por {{ venta.anulada_por }} el {{ venta.anulada_en|date:"d-m-Y H:i" }}. Motivo: {{ venta.motivo_anulacion }}</p>
+    {% elif perms.ventas.change_venta %}
+      <a href="{% url 'ventas:anular_venta' venta.pk %}" class="btn btn-outline-danger btn-sm">Anular venta</a>
+    {% endif %}
+    <a href="{% url 'ventas:punto_venta' %}" class="btn btn-outline-secondary btn-sm">Volver al punto de venta</a>
+  </div>
+</div>
+{% endblock %}

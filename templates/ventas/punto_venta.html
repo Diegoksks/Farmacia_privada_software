@@ -1,0 +1,525 @@
+{% extends 'base.html' %}
+{% block title %}Punto de venta — Farmacia Privada{% endblock %}
+{% block container_style_attr %}style="max-width: 1100px;"{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h1 class="h3 mb-0 fw-bold">Punto de Venta</h1>
+    <span class="text-muted small"><i class="bi bi-shop me-1"></i>Caja abierta con ${{ caja.monto_apertura|floatformat:"0" }} CLP</span>
+  </div>
+</div>
+
+{% for message in messages %}
+  <div class="alert alert-{{ message.tags|default:'info' }} py-2 d-flex align-items-center" style="animation: alertSlideIn .3s ease both;">
+    {% if message.tags == 'error' %}<i class="bi bi-exclamation-triangle-fill me-2"></i>
+    {% elif message.tags == 'success' %}<i class="bi bi-check-circle-fill me-2"></i>
+    {% endif %}
+    {{ message }}
+  </div>
+{% endfor %}
+
+<div id="posAlertContainer"></div>
+
+<div class="row g-4">
+  {# Columna Principal: Carrito y Finalizar #}
+  <div class="col-lg-7 d-flex flex-column gap-3">
+    
+    <div class="card shadow-sm border-0" style="animation: alertSlideIn .3s ease both;">
+      <div class="card-header bg-transparent pt-3 pb-2 border-bottom-0">
+        <h2 class="h5 mb-0 fw-semibold"><i class="bi bi-cart3 text-primary me-2"></i>Carrito actual</h2>
+      </div>
+      <div class="card-body">
+        {% if lineas %}
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-3">
+              <thead class="table-light text-muted small">
+                <tr>
+                  <th class="ps-3">Producto</th>
+                  <th class="text-center">Cant.</th>
+                  <th class="text-end">Subtotal</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="carritoTbody">
+                {% for linea in lineas %}
+                  <tr style="border-bottom: 1px solid var(--fp-borde);" class="fila-carrito" data-index="{{ linea.index }}">
+                    <td class="ps-3 py-3">
+                      <div class="fw-medium">{{ linea.producto.nombre }}</div>
+                      {% if linea.receta_detalle %}
+                        <div class="small text-muted mt-1">
+                          <i class="bi bi-file-medical text-primary me-1"></i>{{ linea.receta_detalle.receta.cliente.nombre_completo }}
+                          {% if linea.retirado_por %}
+                            <br><span class="badge text-bg-warning mt-1">Retira: {{ linea.retirado_por.nombre }}{% if linea.retirado_por.relacion %} ({{ linea.retirado_por.relacion }}){% endif %}</span>
+                          {% endif %}
+                        </div>
+                      {% endif %}
+                    </td>
+                    <td class="text-center align-middle" style="min-width: 140px;">
+                      <div class="d-inline-flex align-items-center bg-light border rounded-pill p-1 shadow-sm">
+                        <form method="post" action="{% url 'ventas:actualizar_cantidad' linea.index %}" class="d-inline m-0 form-actualizar-cantidad">
+                          {% csrf_token %}
+                          <input type="hidden" name="accion" value="decrementar">
+                          <button type="submit" class="btn btn-sm btn-white text-secondary rounded-circle p-0 d-flex align-items-center justify-content-center border btn-decrementar" 
+                                  style="width: 26px; height: 26px; background-color: #fff;" title="Disminuir cantidad"
+                                  {% if linea.cantidad <= 1 %}disabled{% endif %}>
+                            <i class="bi bi-dash fw-bold"></i>
+                          </button>
+                        </form>
+                        
+                        <span class="px-2 fw-bold text-dark font-monospace cant-display" style="min-width: 32px; text-align: center; font-size: 0.95rem; transition: transform 0.15s ease, color 0.15s ease;">
+                          {{ linea.cantidad }}
+                        </span>
+
+                        <form method="post" action="{% url 'ventas:actualizar_cantidad' linea.index %}" class="d-inline m-0 form-actualizar-cantidad">
+                          {% csrf_token %}
+                          <input type="hidden" name="accion" value="incrementar">
+                          <button type="submit" class="btn btn-sm btn-primary rounded-circle p-0 d-flex align-items-center justify-content-center shadow-sm btn-incrementar" 
+                                  style="width: 26px; height: 26px;" title="Aumentar cantidad">
+                            <i class="bi bi-plus fw-bold"></i>
+                          </button>
+                        </form>
+                      </div>
+                    </td>
+                    <td class="text-end tabular fw-semibold align-middle subtotal-display">${{ linea.subtotal }}</td>
+                    <td class="text-end pe-2 align-middle">
+                      <form method="post" action="{% url 'ventas:quitar_linea' linea.index %}" class="d-inline form-quitar-linea">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-outline-danger border-0" title="Quitar del carrito"><i class="bi bi-trash3"></i></button>
+                      </form>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          <div class="d-flex justify-content-between align-items-center bg-light p-3 rounded-3">
+            <span class="text-muted fw-medium text-uppercase small">Total a pagar</span>
+            <span class="fs-4 fw-bold text-success" id="totalPagarTexto">${{ total|floatformat:"0" }} CLP</span>
+          </div>
+        {% else %}
+          <div class="text-center py-5">
+            <i class="bi bi-basket text-muted" style="font-size: 3rem; opacity: 0.5;"></i>
+            <p class="text-muted mt-3 mb-0">El carrito está vacío. Agrega productos para comenzar.</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card shadow-sm border-0" style="animation: alertSlideIn .4s ease both;">
+      <div class="card-header bg-transparent pt-3 pb-2 border-bottom-0">
+        <h2 class="h5 mb-0 fw-semibold"><i class="bi bi-credit-card-2-front text-primary me-2"></i>Finalizar venta</h2>
+      </div>
+      <div class="card-body">
+        <form method="post" action="{% url 'ventas:finalizar_venta' %}">
+          {% csrf_token %}
+          <div class="row g-3 mb-4">
+            {% for field in form_finalizar %}
+              {% if field.name == 'cliente' %}
+                <div class="col-12">
+                  <label class="form-label text-muted small fw-medium mb-1">{{ field.label }}</label>
+                  <div class="d-flex gap-2">
+                    <div class="flex-grow-1">{{ field }}</div>
+                    <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalNuevoCliente" title="Crear Nuevo Cliente">
+                      <i class="bi bi-person-plus-fill"></i>
+                    </button>
+                  </div>
+                  <div class="form-text">Si es venta libre con boleta, puedes dejarlo en blanco.</div>
+                </div>
+              {% elif field.field.widget.input_type == 'checkbox' %}
+                <div class="col-12 mt-2">
+                  <div class="form-check form-switch">
+                    {{ field }}
+                    <label class="form-check-label ms-1">{{ field.label }}</label>
+                  </div>
+                </div>
+              {% else %}
+                <div class="col-md-6">
+                  <label class="form-label text-muted small fw-medium mb-1">{{ field.label }}</label>
+                  {{ field }}
+                </div>
+              {% endif %}
+            {% endfor %}
+          </div>
+          <button type="submit" class="btn btn-primary btn-lg w-100 fw-semibold py-3" {% if not lineas %}disabled{% endif %}>
+            <i class="bi bi-check-circle me-2"></i>Procesar Pago y Finalizar
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  {# Columna Secundaria: Búsqueda y Recetas #}
+  <div class="col-lg-5 d-flex flex-column gap-3">
+    
+    <div class="card shadow-sm border-0" style="background-color: var(--fp-acento-claro); animation: alertSlideIn .3s ease both; z-index: 10;">
+      <div class="card-body">
+        <h2 class="h5 mb-3 fw-bold text-primary"><i class="bi bi-upc-scan me-2"></i>Escanear o buscar producto</h2>
+        
+        <div class="position-relative mb-3">
+          <input type="text" id="buscadorProductos" class="form-control form-control-lg border-primary shadow-sm" placeholder="Ingresa el nombre, principio activo o escanea el código..." autocomplete="off">
+          <div id="resultadosBusqueda" class="list-group position-absolute w-100 shadow" style="z-index: 1050; display: none; max-height: 300px; overflow-y: auto;">
+            <!-- Resultados AJAX se inyectan aquí -->
+          </div>
+        </div>
+
+        <form method="post" action="{% url 'ventas:agregar_codigo' %}" id="formAgregarProducto" class="d-none">
+          {% csrf_token %}
+          <input type="hidden" name="codigo_barras" id="inputCodigoBarras">
+          <input type="number" name="cantidad" value="1" id="inputCantidad">
+        </form>
+        
+        <p class="text-primary opacity-75 small mb-0"><i class="bi bi-info-circle me-1"></i>Haz clic en un resultado para agregarlo automáticamente al carrito con cantidad 1.</p>
+      </div>
+    </div>
+
+    <div class="card shadow-sm border-0" style="animation: alertSlideIn .4s ease both;">
+      <div class="card-header bg-transparent pt-3 pb-2 border-bottom-0">
+        <h2 class="h6 mb-0 fw-semibold"><i class="bi bi-file-earmark-medical text-primary me-2"></i>Agregar desde receta</h2>
+      </div>
+      <div class="card-body">
+        <form method="post" action="{% url 'ventas:agregar_receta' %}">
+          {% csrf_token %}
+          {% for field in form_receta %}
+            <div class="mb-3">
+              <label class="form-label text-muted small fw-medium mb-1">{{ field.label }}</label>
+              {{ field }}
+            </div>
+          {% endfor %}
+          <button type="submit" class="btn btn-outline-primary w-100"><i class="bi bi-plus-lg me-1"></i>Agregar Receta al Carrito</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Nuevo Cliente -->
+<div class="modal fade" id="modalNuevoCliente" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-light">
+        <h5 class="modal-title fw-bold"><i class="bi bi-person-plus text-primary me-2"></i>Registrar Nuevo Cliente</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="formNuevoCliente">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label class="form-label text-muted small fw-medium mb-1">RUT (sin puntos, con guion)</label>
+            <input type="text" name="rut" class="form-control" required placeholder="12345678-9">
+            <div class="invalid-feedback" id="error-rut"></div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label text-muted small fw-medium mb-1">Nombres</label>
+            <input type="text" name="nombres" class="form-control" required>
+            <div class="invalid-feedback" id="error-nombres"></div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label text-muted small fw-medium mb-1">Apellidos</label>
+            <input type="text" name="apellidos" class="form-control" required>
+            <div class="invalid-feedback" id="error-apellidos"></div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label text-muted small fw-medium mb-1">Email</label>
+            <input type="email" name="email" class="form-control" required>
+            <div class="invalid-feedback" id="error-email"></div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label text-muted small fw-medium mb-1">Teléfono</label>
+            <input type="text" name="telefono" class="form-control">
+            <div class="invalid-feedback" id="error-telefono"></div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer bg-light border-top-0">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="btnGuardarCliente">Guardar y Seleccionar</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  const factura = document.getElementById("id_emitir_factura");
+  const cliente = document.getElementById("id_cliente");
+  if (factura && cliente) {
+    const validarCliente = () => { cliente.required = factura.checked; };
+    factura.addEventListener("change", validarCliente);
+    validarCliente();
+  }
+  
+  // === 1. Auto-focus en el buscador de productos al cargar la página ===
+  const buscador = document.getElementById("buscadorProductos");
+  const resultados = document.getElementById("resultadosBusqueda");
+  const formAgregar = document.getElementById("formAgregarProducto");
+  const inputCodigo = document.getElementById("inputCodigoBarras");
+  
+  if(buscador) {
+    buscador.focus();
+    
+    let debounceTimer;
+    buscador.addEventListener("input", function() {
+      clearTimeout(debounceTimer);
+      const query = this.value.trim();
+      
+      if(query.length < 2) {
+        resultados.style.display = 'none';
+        return;
+      }
+      
+      debounceTimer = setTimeout(() => {
+        fetch(`{% url 'ventas:api_buscar_producto' %}?q=${encodeURIComponent(query)}`)
+          .then(res => res.json())
+          .then(data => {
+            resultados.innerHTML = '';
+            if(data.resultados && data.resultados.length > 0) {
+              data.resultados.forEach(p => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center';
+                
+                const rec = p.requiere_receta ? '<span class="badge bg-danger ms-2" style="font-size:0.65rem;">RECETA</span>' : '';
+                const stockCls = p.stock_vitrina > 0 ? 'text-success' : 'text-danger fw-bold';
+                
+                btn.innerHTML = `
+                  <div>
+                    <div class="fw-bold">${p.nombre} ${rec}</div>
+                    <small class="text-muted">${p.principio_activo} | ${p.codigo_barras}</small>
+                  </div>
+                  <div class="text-end">
+                    <div class="fw-bold">$${p.precio_venta}</div>
+                    <small class="${stockCls}">${p.stock_vitrina} en vitrina</small>
+                  </div>
+                `;
+                
+                btn.addEventListener('click', () => {
+                  if(p.requiere_receta) {
+                    alert('Este producto requiere receta. Agrégalo desde la sección "Agregar desde receta".');
+                    return;
+                  }
+                  if(p.stock_vitrina <= 0) {
+                    alert('No hay stock en vitrina. Realiza un traspaso desde bodega.');
+                    return;
+                  }
+                  // Enviar form
+                  inputCodigo.value = p.codigo_barras;
+                  formAgregar.submit();
+                });
+                
+                resultados.appendChild(btn);
+              });
+              resultados.style.display = 'block';
+            } else {
+              resultados.innerHTML = '<div class="list-group-item text-muted">No se encontraron productos...</div>';
+              resultados.style.display = 'block';
+            }
+          });
+      }, 300);
+    });
+
+    // Ocultar al hacer clic fuera
+    document.addEventListener('click', (e) => {
+      if(!buscador.contains(e.target) && !resultados.contains(e.target)) {
+        resultados.style.display = 'none';
+      }
+    });
+  }
+
+  // === 2. Creación rápida de cliente vía AJAX ===
+  const btnGuardarCliente = document.getElementById("btnGuardarCliente");
+  const formCliente = document.getElementById("formNuevoCliente");
+  
+  if(btnGuardarCliente) {
+    btnGuardarCliente.addEventListener("click", function() {
+      // Limpiar errores previos
+      document.querySelectorAll('#formNuevoCliente .is-invalid').forEach(el => el.classList.remove('is-invalid'));
+      
+      const formData = new FormData(formCliente);
+      const btnOriginal = this.innerHTML;
+      this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Guardando...';
+      this.disabled = true;
+
+      fetch(`{% url 'ventas:api_crear_cliente' %}`, {
+        method: 'POST',
+        body: formData,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      })
+      .then(res => res.json().then(data => ({status: res.status, body: data})))
+      .then(res => {
+        this.innerHTML = btnOriginal;
+        this.disabled = false;
+        
+        if(res.status === 200 && res.body.exito) {
+          // Agregar al dropdown y seleccionar
+          const select = document.getElementById("id_cliente"); // El ID que genera django para el form
+          if(select) {
+            const option = new Option(res.body.cliente.nombre_completo + ' (' + res.body.cliente.rut + ')', res.body.cliente.id, true, true);
+            select.add(option);
+          }
+          
+          // Cerrar modal y limpiar
+          const modalEl = document.getElementById('modalNuevoCliente');
+          const modal = bootstrap.Modal.getInstance(modalEl);
+          modal.hide();
+          formCliente.reset();
+          
+        } else if (res.body.errores) {
+          // Mostrar errores
+          for (const [field, error] of Object.entries(res.body.errores)) {
+            const input = formCliente.elements[field];
+            if(input) {
+              input.classList.add('is-invalid');
+              const errorDiv = document.getElementById(`error-${field}`);
+              if(errorDiv) errorDiv.textContent = error;
+            }
+          }
+        } else {
+          alert('Error desconocido al crear el cliente.');
+        }
+      })
+      .catch(err => {
+        this.innerHTML = btnOriginal;
+        this.disabled = false;
+        alert('Error de conexión.');
+        console.error(err);
+      });
+    });
+  }
+
+  // === 3. Control asíncrono de cantidad (+ / -) y carrito sin recarga de página ===
+  function mostrarAlertaPos(mensaje, tipo = 'warning') {
+    const container = document.getElementById('posAlertContainer');
+    if (!container) return;
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${tipo} alert-dismissible fade show py-2 d-flex align-items-center shadow-sm`;
+    alertDiv.style.animation = 'alertSlideIn .3s ease both';
+    alertDiv.innerHTML = `
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>
+      <div>${mensaje}</div>
+      <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    `;
+    container.innerHTML = '';
+    container.appendChild(alertDiv);
+    setTimeout(() => {
+      if (alertDiv && alertDiv.parentElement) {
+        alertDiv.classList.remove('show');
+        setTimeout(() => alertDiv.remove(), 200);
+      }
+    }, 4500);
+  }
+
+  // Interceptar clicks / submits en los formularios de cantidad (+ / -)
+  document.addEventListener('submit', function(e) {
+    const formCantidad = e.target.closest('.form-actualizar-cantidad');
+    if (formCantidad) {
+      e.preventDefault();
+      
+      const fila = formCantidad.closest('.fila-carrito');
+      if (!fila) return;
+
+      const spanCant = fila.querySelector('.cant-display');
+      const tdSubtotal = fila.querySelector('.subtotal-display');
+      const btnMenos = fila.querySelector('.btn-decrementar');
+      const btnSubmit = formCantidad.querySelector('button[type="submit"]');
+      const totalPagarTexto = document.getElementById('totalPagarTexto');
+
+      if (btnSubmit) btnSubmit.disabled = true;
+
+      const formData = new FormData(formCantidad);
+
+      fetch(formCantidad.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      })
+      .then(async res => {
+        const data = await res.json();
+        if (!res.ok || !data.ok) {
+          throw new Error(data.error || 'No se pudo actualizar la cantidad.');
+        }
+        return data;
+      })
+      .then(data => {
+        if (data.eliminado) {
+          window.location.reload();
+          return;
+        }
+
+        // 1. Actualizar cantidad visual con animación micro-interactiva
+        if (spanCant) {
+          spanCant.textContent = data.cantidad;
+          spanCant.style.transform = 'scale(1.3)';
+          spanCant.classList.add('text-primary');
+          setTimeout(() => {
+            spanCant.style.transform = 'scale(1)';
+            spanCant.classList.remove('text-primary');
+          }, 150);
+        }
+
+        // 2. Actualizar subtotal de la línea
+        if (tdSubtotal) {
+          tdSubtotal.textContent = data.subtotal;
+        }
+
+        // 3. Actualizar total a pagar
+        if (totalPagarTexto) {
+          totalPagarTexto.textContent = data.total_formateado;
+        }
+
+        // 4. Bloquear botón de restar si cantidad es 1
+        if (btnMenos) {
+          btnMenos.disabled = !!data.deshabilitar_menos;
+        }
+      })
+      .catch(err => {
+        mostrarAlertaPos(err.message, 'warning');
+      })
+      .finally(() => {
+        if (btnSubmit) {
+          if (btnSubmit.classList.contains('btn-decrementar')) {
+            const cant = spanCant ? parseInt(spanCant.textContent.trim()) : 1;
+            btnSubmit.disabled = (cant <= 1);
+          } else {
+            btnSubmit.disabled = false;
+          }
+        }
+      });
+      return;
+    }
+
+    const formQuitar = e.target.closest('.form-quitar-linea');
+    if (formQuitar) {
+      e.preventDefault();
+      const formData = new FormData(formQuitar);
+
+      fetch(formQuitar.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      })
+      .then(async res => {
+        const data = await res.json();
+        if (!res.ok || !data.ok) {
+          throw new Error(data.error || 'Error al quitar línea.');
+        }
+        return data;
+      })
+      .then(data => {
+        window.location.reload();
+      })
+      .catch(err => {
+        formQuitar.submit();
+      });
+    }
+  });
+  
+});
+</script>
+{% endblock %}

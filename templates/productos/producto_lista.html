@@ -1,0 +1,147 @@
+{% extends 'base.html' %}
+{% block title %}Catálogo de productos{% endblock %}
+{% block container_style_attr %}style="max-width: 1100px;"{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h4 mb-0">Catálogo de productos</h1>
+  <div>
+    <a href="{% url 'productos:categoria_lista' %}" class="btn btn-sm btn-outline-secondary">Categorías</a>
+    {% if perms.productos.add_producto %}
+      <a href="{% url 'productos:crear' %}" class="btn btn-sm btn-primary">Nuevo producto</a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card shadow-sm mb-3">
+  <div class="card-body py-3">
+    <form method="get" class="row g-2 align-items-end">
+      <div class="col-md-4">
+        <label class="form-label small mb-1">Buscar</label>
+        <input type="text" name="q" value="{{ filtros.q }}" class="form-control form-control-sm"
+               placeholder="Nombre, principio activo, código de barras">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label small mb-1">Tipo</label>
+        <select name="tipo" class="form-select form-select-sm">
+          <option value="">Todos</option>
+          {% for valor, etiqueta in tipos %}
+            <option value="{{ valor }}" {% if filtros.tipo == valor %}selected{% endif %}>{{ etiqueta }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label small mb-1">Nivel de control</label>
+        <select name="nivel_control" class="form-select form-select-sm">
+          <option value="">Todos</option>
+          {% for valor, etiqueta in niveles %}
+            <option value="{{ valor }}" {% if filtros.nivel_control == valor %}selected{% endif %}>{{ etiqueta }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label small mb-1">Categoría</label>
+        <select name="categoria" class="form-select form-select-sm">
+          <option value="">Todas</option>
+          {% for categoria in categorias %}
+            <option value="{{ categoria.pk }}" {% if filtros.categoria == categoria.pk|stringformat:'s' %}selected{% endif %}>{{ categoria.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-1">
+        <label class="form-label small mb-1">Estado</label>
+        <select name="estado" class="form-select form-select-sm">
+          <option value="">Todos</option>
+          <option value="activos" {% if filtros.estado == 'activos' %}selected{% endif %}>Activos</option>
+          <option value="inactivos" {% if filtros.estado == 'inactivos' %}selected{% endif %}>Inactivos</option>
+        </select>
+      </div>
+      <div class="col-md-1">
+        <button type="submit" class="btn btn-sm btn-outline-primary w-100">Filtrar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-sm table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Producto</th>
+          <th>Categoría</th>
+          <th>Nivel de control</th>
+          <th class="text-end">Precio</th>
+          <th class="text-end">Stock</th>
+          <th class="text-center">Estado</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for producto in productos %}
+          <tr>
+            <td>
+              <div class="fw-semibold">{{ producto.nombre }}</div>
+              <div class="text-muted small">
+                {{ producto.get_tipo_display }}
+                {% if producto.principio_activo %}· {{ producto.principio_activo }}{% endif %}
+                · <span class="font-monospace">{{ producto.codigo_barras }}</span>
+              </div>
+            </td>
+            <td>{{ producto.categoria.nombre }}</td>
+            <td>
+              {{ producto.get_nivel_control_display }}
+              {% if producto.categoria_regulatoria != 'NINGUNA' %}
+                <span class="badge text-bg-dark">{{ producto.get_categoria_regulatoria_display }}</span>
+              {% endif %}
+            </td>
+            <td class="text-end">${{ producto.precio_venta }}</td>
+            <td class="text-end">
+              {% if producto.stock_actual <= producto.stock_minimo %}
+                <span class="badge text-bg-danger">{{ producto.stock_actual }}</span>
+              {% else %}
+                {{ producto.stock_actual }}
+              {% endif %}
+            </td>
+            <td class="text-center">
+              {% if producto.activo %}
+                <span class="badge text-bg-success">Activo</span>
+              {% else %}
+                <span class="badge text-bg-secondary">Inactivo</span>
+              {% endif %}
+            </td>
+            <td class="text-end text-nowrap">
+              {% if perms.productos.change_producto %}
+                <a href="{% url 'productos:editar' producto.pk %}" class="btn btn-sm btn-outline-secondary">Editar</a>
+                <form method="post" action="{% url 'productos:toggle_activo' producto.pk %}" class="d-inline">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-sm btn-outline-{% if producto.activo %}danger{% else %}success{% endif %}">
+                    {% if producto.activo %}Desactivar{% else %}Activar{% endif %}
+                  </button>
+                </form>
+              {% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="7" class="text-muted text-center py-4">No hay productos que coincidan con la búsqueda.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% if is_paginated %}
+  <nav class="mt-3">
+    <ul class="pagination pagination-sm justify-content-center">
+      {% if page_obj.has_previous %}
+        <li class="page-item"><a class="page-link" href="?{{ request.GET.urlencode }}&page={{ page_obj.previous_page_number }}">Anterior</a></li>
+      {% endif %}
+      <li class="page-item disabled"><span class="page-link">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span></li>
+      {% if page_obj.has_next %}
+        <li class="page-item"><a class="page-link" href="?{{ request.GET.urlencode }}&page={{ page_obj.next_page_number }}">Siguiente</a></li>
+      {% endif %}
+    </ul>
+  </nav>
+{% endif %}
+
+{% endblock %}

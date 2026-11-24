@@ -1,0 +1,238 @@
+{% extends 'base.html' %}
+{% block title %}{% if form.instance.pk %}Editar Receta #{{ form.instance.pk }}{% else %}Nueva Receta{% endif %}{% endblock %}
+{% block container_style_attr %}style="max-width: 860px;"{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h1 class="h4 mb-1">
+      <i class="bi bi-file-medical-fill me-2 text-primary"></i>
+      {% if form.instance.pk %}Editar Receta #{{ form.instance.pk }}{% else %}Registrar Nueva Receta{% endif %}
+    </h1>
+    <p class="text-muted small mb-0">
+      {% if form.instance.pk %}Modifica los datos del encabezado y los medicamentos prescritos.
+      {% else %}Completa los datos del médico, el paciente y los medicamentos prescritos (RFP-09).{% endif %}
+    </p>
+  </div>
+  <a href="{% url 'recetas:lista' %}" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i>Cancelar
+  </a>
+</div>
+
+<form method="post" novalidate id="receta-form">
+  {% csrf_token %}
+
+  {# Errores globales del form #}
+  {% if form.non_field_errors %}
+  <div class="alert alert-danger py-2 small">
+    {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+  </div>
+  {% endif %}
+
+  {# ── Sección 1: Datos de la receta ── #}
+  <div class="card shadow-sm mb-3">
+    <div class="card-header bg-light py-2">
+      <span class="fw-semibold small"><i class="bi bi-info-circle me-2"></i>Datos de la Receta</span>
+    </div>
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-12">
+          <label class="form-label fw-semibold small" for="{{ form.cliente.id_for_label }}">Paciente</label>
+          {{ form.cliente }}
+          {% if form.cliente.errors %}
+          <div class="invalid-feedback d-block small">{{ form.cliente.errors.0 }}</div>
+          {% endif %}
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-semibold small" for="{{ form.tipo.id_for_label }}">Tipo de receta</label>
+          {{ form.tipo }}
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-semibold small" for="{{ form.folio.id_for_label }}">
+            Folio <span class="text-muted fw-normal">(opcional)</span>
+          </label>
+          {{ form.folio }}
+          {% if form.folio.errors %}
+          <div class="invalid-feedback d-block small">{{ form.folio.errors.0 }}</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# ── Sección 2: Datos del médico ── #}
+  <div class="card shadow-sm mb-3">
+    <div class="card-header bg-light py-2">
+      <span class="fw-semibold small"><i class="bi bi-hospital me-2"></i>Médico Emisor</span>
+    </div>
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label fw-semibold small" for="{{ form.medico_rut.id_for_label }}">RUT del médico</label>
+          {{ form.medico_rut }}
+          {% if form.medico_rut.errors %}
+          <div class="invalid-feedback d-block small">{{ form.medico_rut.errors.0 }}</div>
+          {% endif %}
+        </div>
+        <div class="col-md-8">
+          <label class="form-label fw-semibold small" for="{{ form.medico_nombre.id_for_label }}">Nombre del médico</label>
+          {{ form.medico_nombre }}
+          {% if form.medico_nombre.errors %}
+          <div class="invalid-feedback d-block small">{{ form.medico_nombre.errors.0 }}</div>
+          {% endif %}
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-semibold small" for="{{ form.fecha_emision.id_for_label }}">Fecha de emisión</label>
+          {{ form.fecha_emision }}
+          {% if form.fecha_emision.errors %}
+          <div class="invalid-feedback d-block small">{{ form.fecha_emision.errors.0 }}</div>
+          {% endif %}
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-semibold small" for="{{ form.fecha_vencimiento.id_for_label }}">Fecha de vencimiento</label>
+          {{ form.fecha_vencimiento }}
+          {% if form.fecha_vencimiento.errors %}
+          <div class="invalid-feedback d-block small">{{ form.fecha_vencimiento.errors.0 }}</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# ── Sección 3: Medicamentos prescritos (formset) ── #}
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-light py-2 d-flex justify-content-between align-items-center">
+      <span class="fw-semibold small"><i class="bi bi-capsule me-2"></i>Medicamentos Prescritos</span>
+      <button type="button" id="btn-agregar-linea" class="btn btn-sm btn-outline-primary py-0">
+        <i class="bi bi-plus-lg me-1"></i>Agregar
+      </button>
+    </div>
+    <div class="card-body p-0">
+      {{ formset.management_form }}
+      {% if formset.non_form_errors %}
+      <div class="alert alert-danger m-3 py-2 small">{{ formset.non_form_errors }}</div>
+      {% endif %}
+
+      <div id="formset-contenedor">
+        {% for detalle_form in formset %}
+        <div class="formset-fila border-bottom px-3 py-3 {% if detalle_form.instance.pk and detalle_form.instance.cantidad_dispensada > 0 %}bg-light{% endif %}">
+          <div class="row g-2 align-items-end">
+            {% if detalle_form.instance.pk %}
+            {# Línea existente con dispensaciones: protección de edición #}
+            <div class="col">
+              <div class="small fw-semibold">{{ detalle_form.instance.producto.nombre }}</div>
+              <div class="text-muted" style="font-size:.75rem;">{{ detalle_form.instance.posologia }}</div>
+            </div>
+            <div class="col-auto small text-muted">
+              Prescrito: <strong>{{ detalle_form.instance.cantidad_prescrita }}</strong> ·
+              Dispensado: <strong>{{ detalle_form.instance.cantidad_dispensada }}</strong> ·
+              Saldo: <strong class="{% if detalle_form.instance.saldo > 0 %}text-success{% else %}text-muted{% endif %}">{{ detalle_form.instance.saldo }}</strong>
+            </div>
+            {% else %}
+            <div class="col-md-5">
+              <label class="form-label small fw-semibold mb-1">Medicamento</label>
+              {{ detalle_form.producto }}
+              {% if detalle_form.producto.errors %}
+              <div class="invalid-feedback d-block small">{{ detalle_form.producto.errors.0 }}</div>
+              {% endif %}
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small fw-semibold mb-1">Posología</label>
+              {{ detalle_form.posologia }}
+            </div>
+            <div class="col-md-2">
+              <label class="form-label small fw-semibold mb-1">Cantidad</label>
+              {{ detalle_form.cantidad_prescrita }}
+              {% if detalle_form.cantidad_prescrita.errors %}
+              <div class="invalid-feedback d-block small">{{ detalle_form.cantidad_prescrita.errors.0 }}</div>
+              {% endif %}
+            </div>
+            <div class="col-md-1 d-flex align-items-center">
+              <div class="form-check" style="display:none!important;">{{ detalle_form.DELETE }}</div>
+              <button type="button" class="btn btn-sm btn-outline-danger btn-eliminar-fila py-0" title="Eliminar">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+            {% endif %}
+            {{ detalle_form.id }}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      {# Template oculto para nuevas filas vía JS #}
+      <div id="formset-empty-template" style="display:none;" class="formset-fila border-bottom px-3 py-3">
+        <div class="row g-2 align-items-end">
+          <div class="col-md-5">
+            <label class="form-label small fw-semibold mb-1">Medicamento</label>
+            {{ formset.empty_form.producto }}
+          </div>
+          <div class="col-md-4">
+            <label class="form-label small fw-semibold mb-1">Posología</label>
+            {{ formset.empty_form.posologia }}
+          </div>
+          <div class="col-md-2">
+            <label class="form-label small fw-semibold mb-1">Cantidad</label>
+            {{ formset.empty_form.cantidad_prescrita }}
+          </div>
+          <div class="col-md-1 d-flex align-items-center">
+            <div style="display:none!important;">{{ formset.empty_form.DELETE }}</div>
+            <button type="button" class="btn btn-sm btn-outline-danger btn-eliminar-fila py-0" title="Eliminar">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+          {{ formset.empty_form.id }}
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="d-flex justify-content-end gap-2">
+    <a href="{% url 'recetas:lista' %}" class="btn btn-outline-secondary">Cancelar</a>
+    <button type="submit" class="btn btn-primary">
+      <i class="bi bi-save me-1"></i>
+      {% if form.instance.pk %}Actualizar receta{% else %}Guardar receta{% endif %}
+    </button>
+  </div>
+</form>
+
+<script>
+(function () {
+  const contenedor = document.getElementById('formset-contenedor');
+  const template = document.getElementById('formset-empty-template');
+  const totalForms = document.getElementById('id_recetadetalle_set-TOTAL_FORMS');
+
+  document.getElementById('btn-agregar-linea').addEventListener('click', function () {
+    const idx = parseInt(totalForms.value);
+    const clone = template.cloneNode(true);
+    clone.removeAttribute('id');
+    clone.style.display = '';
+    // Reemplazar __prefix__ por el índice correcto
+    clone.innerHTML = clone.innerHTML.replace(/__prefix__/g, idx);
+    contenedor.appendChild(clone);
+    totalForms.value = idx + 1;
+    // Conectar botón eliminar de la nueva fila
+    clone.querySelector('.btn-eliminar-fila').addEventListener('click', eliminarFila);
+  });
+
+  function eliminarFila(e) {
+    const fila = e.currentTarget.closest('.formset-fila');
+    const chkDelete = fila.querySelector('input[name$="-DELETE"]');
+    if (chkDelete) {
+      chkDelete.checked = true;
+      fila.style.display = 'none';
+    } else {
+      fila.remove();
+      totalForms.value = parseInt(totalForms.value) - 1;
+    }
+  }
+
+  // Conectar botones eliminar de filas existentes
+  document.querySelectorAll('.btn-eliminar-fila').forEach(btn => {
+    btn.addEventListener('click', eliminarFila);
+  });
+})();
+</script>
+
+{% endblock %}

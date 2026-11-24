@@ -1,0 +1,13 @@
+.git
+.env
+.env.*
+venv
+.venv
+**/__pycache__
+*.exe
+*.sqlite3*
+media
+staticfiles
+*.pdf
+*.docx
+*_texto.txt

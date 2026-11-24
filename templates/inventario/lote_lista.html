@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+{% block title %}Inventario y Lotes{% endblock %}
+{% block container_style_attr %}style="max-width: 1200px;"{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+  <div>
+    <h1 class="h3 mb-0 fw-bold">Gestión de Lotes y Vencimientos</h1>
+    <p class="text-muted small mb-0 mt-1">Control de stock detallado por ubicación y fecha de expiración</p>
+  </div>
+</div>
+
+<div class="card mb-4 shadow-sm border-0" style="animation: alertSlideIn .3s ease both;">
+  <div class="card-body">
+    <form method="get" class="row g-3 align-items-end">
+      <div class="col-md-5">
+        <label class="form-label small text-muted mb-1">Buscar Producto o Lote</label>
+        <div class="input-group">
+          <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+          <input type="text" name="q" value="{{ filtros.q }}" class="form-control" placeholder="Nombre de producto o nro. de lote...">
+        </div>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small text-muted mb-1">Filtro Rápido</label>
+        <select name="estado" class="form-select">
+          <option value="">Todos los lotes</option>
+          <option value="con_stock" {% if filtros.estado == 'con_stock' %}selected{% endif %}>Con stock disponible</option>
+          <option value="vencidos" {% if filtros.estado == 'vencidos' %}selected{% endif %}>Vencidos</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-primary w-100">
+          <i class="bi bi-funnel me-1"></i>Filtrar
+        </button>
+      </div>
+      <div class="col-md-2 text-md-end">
+        <a href="{% url 'inventario:traspaso' %}" class="btn btn-outline-success w-100">
+          <i class="bi bi-arrow-right-circle me-1"></i>Traspasar
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card shadow-sm border-0" style="animation: alertSlideIn .4s ease both;">
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover table-borderless align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th class="ps-4">Producto</th>
+            <th>Nº Lote</th>
+            <th>Vencimiento</th>
+            <th class="text-center">Stock Bodega</th>
+            <th class="text-center">Stock Vitrina</th>
+            <th class="text-end pe-4">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for lote in lotes %}
+            {% with dias=lote.dias_para_vencer %}
+            <tr style="border-bottom: 1px solid var(--fp-borde);">
+              <td class="ps-4 fw-medium">{{ lote.producto.nombre }}</td>
+              <td class="font-mono text-muted">{{ lote.numero_lote }}</td>
+              <td>
+                {% if dias < 0 %}
+                  <span class="badge bg-danger-subtle text-danger"><i class="bi bi-exclamation-octagon me-1"></i>{{ lote.fecha_vencimiento|date:"d M Y" }} (Vencido)</span>
+                {% elif dias <= 90 %}
+                  <span class="badge bg-warning-subtle text-warning-emphasis"><i class="bi bi-exclamation-triangle me-1"></i>{{ lote.fecha_vencimiento|date:"d M Y" }} ({{ dias }} d)</span>
+                {% else %}
+                  <span class="text-muted small">{{ lote.fecha_vencimiento|date:"d M Y" }}</span>
+                {% endif %}
+              </td>
+              <td class="text-center"><span class="badge bg-secondary-subtle text-secondary fs-6">{{ lote.stock_bodega }}</span></td>
+              <td class="text-center"><span class="badge bg-success-subtle text-success fs-6">{{ lote.stock_vitrina }}</span></td>
+              <td class="text-end tabular fw-bold pe-4">{{ lote.total_stock }}</td>
+            </tr>
+            {% endwith %}
+          {% empty %}
+            <tr><td colspan="6" class="text-center text-muted py-5"><i class="bi bi-inbox fs-2 d-block mb-2 text-secondary"></i>No se encontraron lotes con los filtros aplicados.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% if is_paginated %}
+    <div class="card-footer bg-white border-0 py-3">
+      <nav aria-label="Paginación de lotes">
+        <ul class="pagination justify-content-center mb-0">
+          {% if page_obj.has_previous %}
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if filtros.q %}&q={{ filtros.q }}{% endif %}{% if filtros.estado %}&estado={{ filtros.estado }}{% endif %}">Anterior</a></li>
+          {% else %}
+            <li class="page-item disabled"><span class="page-link">Anterior</span></li>
+          {% endif %}
+          
+          <li class="page-item disabled"><span class="page-link">Página {{ page_obj.number }} de {{ paginator.num_pages }}</span></li>
+          
+          {% if page_obj.has_next %}
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}{% if filtros.q %}&q={{ filtros.q }}{% endif %}{% if filtros.estado %}&estado={{ filtros.estado }}{% endif %}">Siguiente</a></li>
+          {% else %}
+            <li class="page-item disabled"><span class="page-link">Siguiente</span></li>
+          {% endif %}
+        </ul>
+      </nav>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

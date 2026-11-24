@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block title %}Cerrar caja{% endblock %}
+{% block content %}
+<div class="card shadow-sm">
+  <div class="card-body">
+    <h1 class="h4 mb-1">Cerrar caja</h1>
+    <p class="text-muted small mb-4">Abierta el {{ caja.fecha_apertura|date:"d-m-Y H:i" }} con ${{ caja.monto_apertura }} CLP.</p>
+    
+    <div class="row g-3 mb-4">
+      <div class="col-md-6">
+        <div class="p-3 bg-primary bg-opacity-10 rounded border border-primary border-opacity-25 h-100">
+          <h3 class="h6 text-primary mb-2"><i class="bi bi-credit-card me-2"></i>Transacciones Electrónicas</h3>
+          <div class="fs-4 fw-bold text-primary">${{ total_digital|default:0 }}</div>
+          <div class="small text-muted mt-1">Monto total procesado vía tarjetas de crédito/débito y transferencias (cuadrado automáticamente).</div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="p-3 bg-success bg-opacity-10 rounded border border-success border-opacity-25 h-100">
+          <h3 class="h6 text-success mb-2"><i class="bi bi-cash-coin me-2"></i>Efectivo en Gaveta</h3>
+          <div class="fs-4 fw-bold text-success">${{ caja.monto_apertura|add:total_efectivo }}</div>
+          <div class="small text-muted mt-1">Suma del fondo de apertura inicial (${{ caja.monto_apertura }}) más los ingresos pagados en efectivo (${{ total_efectivo }}).</div>
+        </div>
+      </div>
+    </div>
+
+    {% for message in messages %}<div class="alert alert-info py-2">{{ message }}</div>{% endfor %}
+    <form method="post">
+      {% csrf_token %}
+      {% if form.non_field_errors %}<div class="alert alert-danger py-2">{{ form.non_field_errors }}</div>{% endif %}
+      {% for field in form %}
+        <div class="mb-3">
+          <label class="form-label">{{ field.label }}</label>
+          {{ field }}
+          {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:', ' }}</div>{% endif %}
+        </div>
+      {% endfor %}
+      <button type="submit" class="btn btn-primary w-100">Cerrar caja</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

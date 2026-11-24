@@ -1,0 +1,468 @@
+{% load static %}<!DOCTYPE html>
+<html lang="es" data-tema="">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Farmacia Privada{% endblock %}</title>
+    <meta name="description" content="Sistema de gestión para farmacia privada: ventas, inventario, recetas y convenios.">
+    <link rel="icon" href="{% static 'favicon.svg' %}" type="image/svg+xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="{% static 'css/app.css' %}?v=3" rel="stylesheet">
+    <script>
+      (function() {
+        const savedSize = localStorage.getItem('fp-tamano-fuente');
+        if (savedSize) {
+          document.documentElement.style.fontSize = savedSize + '%';
+        }
+        const savedTheme = localStorage.getItem('fp-tema');
+        if (savedTheme) {
+          document.documentElement.setAttribute('data-tema', savedTheme);
+          document.documentElement.setAttribute('data-bs-theme', savedTheme === 'oscuro' ? 'dark' : 'light');
+        }
+      })();
+    </script>
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="d-flex flex-column min-vh-100">
+<a class="saltar-contenido" href="#contenido">Saltar al contenido</a>
+
+{% if user.is_authenticated %}
+<nav class="navbar navbar-expand-xl bg-primary" id="navPrincipal" aria-label="Navegación principal">
+  <div class="container-fluid px-3 px-lg-4">
+
+    <!-- Marca -->
+    <a class="navbar-brand text-white" href="{% url 'panel:inicio' %}">
+      <span class="marca-farmacia" aria-hidden="true">✚</span> Farmacia Privada
+    </a>
+
+    <!-- Toggler mobile -->
+    <button class="navbar-toggler border-0" type="button"
+            data-bs-toggle="collapse" data-bs-target="#navMenu"
+            aria-controls="navMenu" aria-label="Menú">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navMenu">
+      <!-- Links izquierda -->
+      <ul class="navbar-nav me-auto gap-1 py-2 py-lg-0">
+
+        <li class="nav-item">
+          <a class="nav-link {% if request.resolver_match.namespace == 'panel' %}active{% endif %}"
+             href="{% url 'panel:inicio' %}">
+            <i class="bi bi-house me-1"></i>Inicio
+          </a>
+        </li>
+
+        {% if perms.ventas.add_venta %}
+        <li class="nav-item">
+          <a class="nav-link {% if request.resolver_match.namespace == 'ventas' %}active{% endif %}"
+             href="{% url 'ventas:punto_venta' %}">
+            <i class="bi bi-cart3 me-1"></i>Punto de venta
+          </a>
+        </li>
+        {% endif %}
+
+        {% if perms.productos.view_producto %}
+        <li class="nav-item">
+          <a class="nav-link {% if request.resolver_match.namespace == 'productos' %}active{% endif %}"
+             href="{% url 'productos:lista' %}">
+            <i class="bi bi-capsule me-1"></i>Catálogo
+          </a>
+        </li>
+        {% endif %}
+
+        {% if perms.clientes.view_cliente %}
+        <li class="nav-item">
+          <a class="nav-link {% if request.resolver_match.namespace == 'clientes' %}active{% endif %}"
+             href="{% url 'clientes:lista' %}">
+            <i class="bi bi-people me-1"></i>Clientes
+          </a>
+        </li>
+        {% endif %}
+
+        {% if perms.recetas.view_receta %}
+        <li class="nav-item">
+          <a class="nav-link {% if request.resolver_match.namespace == 'recetas' %}active{% endif %}"
+             href="{% url 'recetas:lista' %}">
+            <i class="bi bi-file-medical me-1"></i>Recetas
+          </a>
+        </li>
+        {% endif %}
+
+        {% if perms.inventario.add_movimientostock %}
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle {% if request.resolver_match.namespace == 'inventario' %}active{% endif %}"
+             href="#" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-boxes me-1"></i>Inventario
+          </a>
+          <ul class="dropdown-menu">
+            <li>
+              <a class="dropdown-item" href="{% url 'inventario:traspaso' %}">
+                <i class="bi bi-arrow-right-circle me-2 text-primary"></i>Traspaso a vitrina
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item" href="{% url 'inventario:ajuste' %}">
+                <i class="bi bi-pencil-square me-2 text-primary"></i>Ajuste de stock
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item" href="{% url 'inventario:orden_lista' %}">
+                <i class="bi bi-cart-check me-2 text-primary"></i>Órdenes de compra
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item" href="{% url 'inventario:proveedor_lista' %}">
+                <i class="bi bi-building me-2 text-primary"></i>Proveedores
+              </a>
+            </li>
+            <li><hr class="dropdown-divider my-1"></li>
+            <li>
+              <a class="dropdown-item" href="{% url 'inventario:lote_lista' %}">
+                <i class="bi bi-calendar-event me-2 text-primary"></i>Lotes y vencimientos
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item" href="{% url 'inventario:movimiento_lista' %}">
+                <i class="bi bi-journal-text me-2 text-primary"></i>Kardex de movimientos
+              </a>
+            </li>
+          </ul>
+        </li>
+        {% endif %}
+
+        {% if user.rol == 'ADMINISTRADOR' %}
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle {% if request.resolver_match.namespace == 'reportes' %}active{% endif %}"
+             href="#" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-bar-chart me-1"></i>Reportes
+          </a>
+          <ul class="dropdown-menu">
+            <li>
+              <a class="dropdown-item" href="{% url 'reportes:dashboard' %}">
+                <i class="bi bi-speedometer2 me-2 text-primary"></i>Dashboard
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item" href="{% url 'reportes:reporte_ventas' %}">
+                <i class="bi bi-receipt me-2 text-primary"></i>Reporte de ventas
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item" href="{% url 'reportes:reporte_inventario' %}">
+                <i class="bi bi-boxes me-2 text-primary"></i>Reporte de inventario
+              </a>
+            </li>
+          </ul>
+        </li>
+        {% endif %}
+
+        {# Se removió el enlace al Admin nativo de Django porque ya todas las funciones #}
+        {# administrativas fueron migradas al panel de Inicio (Dashboard frontend). #}
+
+      </ul>
+
+      <!-- Derecha: usuario + toggle oscuro -->
+      <div class="d-flex align-items-center gap-2 py-2 py-lg-0">
+
+        <!-- Rol del usuario -->
+        <span class="text-white-50 small d-none d-lg-inline">
+          {{ user.get_full_name|default:user.username }}
+          <span class="opacity-50">·</span>
+          {{ user.get_rol_display }}
+        </span>
+
+        <!-- Accesibilidad: Tamaño de fuente horizontal (A- y A+) -->
+        <div class="d-inline-flex align-items-center gap-1" style="display: inline-flex !important; flex-direction: row !important; vertical-align: middle;">
+          <button type="button" class="btn-tema d-inline-flex align-items-center justify-content-center text-decoration-none" id="btnFontDown" title="Disminuir tamaño de fuente (A-)" aria-label="Disminuir tamaño de letra" style="height: 31px; min-width: 32px; padding: 0.25rem 0.55rem; font-weight: 800; font-size: 0.82rem; line-height: 1; border-radius: 6px; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.25); color: #fff; cursor: pointer;">
+            A-
+          </button>
+          <button type="button" class="btn-tema d-inline-flex align-items-center justify-content-center text-decoration-none" id="btnFontUp" title="Aumentar tamaño de fuente (A+)" aria-label="Aumentar tamaño de letra" style="height: 31px; min-width: 32px; padding: 0.25rem 0.55rem; font-weight: 800; font-size: 0.85rem; line-height: 1; border-radius: 6px; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.25); color: #fff; cursor: pointer;">
+            A+
+          </button>
+        </div>
+
+        <!-- Toggle modo oscuro -->
+        <button class="btn-tema" id="btnTema" title="Cambiar modo" aria-label="Alternar modo oscuro">
+          <i class="bi bi-moon-stars" id="iconaTema"></i>
+        </button>
+
+        <!-- Cambiar contraseña -->
+        <a href="{% url 'usuarios:cambiar_contrasena' %}" class="btn-tema text-decoration-none"
+           title="Cambiar contraseña" aria-label="Cambiar contraseña">
+          <i class="bi bi-key"></i>
+        </a>
+
+        <!-- Cerrar sesión -->
+        <form method="post" action="{% url 'usuarios:logout' %}" class="mb-0">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-sm btn-outline-light fw-semibold px-3">
+            <i class="bi bi-box-arrow-right me-1"></i>Salir
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</nav>
+{% endif %}
+
+<main class="flex-grow-1" id="contenido">
+  <div class="container py-4" {% block container_style_attr %}style="max-width: 480px;"{% endblock %}>
+
+    {% if messages %}
+      <div class="mb-3">
+        {% for message in messages %}
+          <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show py-2 mb-2" role="alert">
+            <i class="bi bi-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'danger' or message.tags == 'error' %}exclamation-triangle{% elif message.tags == 'warning' %}exclamation-circle{% else %}info-circle{% endif %} me-2"></i>
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    {% block content %}{% endblock %}
+  </div>
+</main>
+
+{% if request.resolver_match.view_name == 'panel:inicio' %}
+<footer class="pt-5 pb-4 mt-auto border-top" style="background:var(--fp-superficie-2); border-color:var(--fp-borde)!important;">
+  <div class="container-fluid px-4" style="max-width:1400px">
+    <div class="row g-4 mb-4">
+      <div class="col-12 col-md-4">
+        <h5 class="fw-bold mb-3" style="color:var(--fp-acento);"><i class="bi bi-prescription2 me-2"></i>Farmacia Privada</h5>
+        <p style="font-size: .85rem; color:var(--fp-texto-suave); line-height: 1.6; max-width: 300px;">
+          Líderes en salud y bienestar. Proveemos medicamentos, insumos y atención farmacéutica de calidad con la tecnología más avanzada del mercado.
+        </p>
+      </div>
+      
+      <div class="col-6 col-md-4">
+        <h6 class="fw-bold mb-3 text-uppercase" style="font-size: .75rem; letter-spacing: .05em; color:var(--fp-texto);">Enlaces Rápidos</h6>
+        <ul class="list-unstyled d-flex flex-column gap-2 mb-0" style="font-size: .85rem;">
+          <li><a href="#" class="text-decoration-none text-muted transition-colors hover-primary">Políticas de Privacidad</a></li>
+          <li><a href="#" class="text-decoration-none text-muted transition-colors hover-primary">Términos y Condiciones</a></li>
+          <li><a href="#" class="text-decoration-none text-muted transition-colors hover-primary">Soporte Técnico</a></li>
+          <li><a href="#" class="text-decoration-none text-muted transition-colors hover-primary">Trabaja con nosotros</a></li>
+        </ul>
+      </div>
+      
+      <div class="col-6 col-md-4">
+        <h6 class="fw-bold mb-3 text-uppercase" style="font-size: .75rem; letter-spacing: .05em; color:var(--fp-texto);">Síguenos</h6>
+        <div class="d-flex gap-3">
+          <a href="#" class="btn-tema text-decoration-none d-inline-flex align-items-center justify-content-center" style="width: 36px; height: 36px; border-radius: 50%; color:var(--fp-texto-suave); border-color:var(--fp-borde); background:var(--fp-superficie);">
+            <i class="bi bi-instagram"></i>
+          </a>
+          <a href="#" class="btn-tema text-decoration-none d-inline-flex align-items-center justify-content-center" style="width: 36px; height: 36px; border-radius: 50%; color:var(--fp-texto-suave); border-color:var(--fp-borde); background:var(--fp-superficie);">
+            <i class="bi bi-facebook"></i>
+          </a>
+          <a href="#" class="btn-tema text-decoration-none d-inline-flex align-items-center justify-content-center" style="width: 36px; height: 36px; border-radius: 50%; color:var(--fp-texto-suave); border-color:var(--fp-borde); background:var(--fp-superficie);">
+            <i class="bi bi-linkedin"></i>
+          </a>
+          <a href="#" class="btn-tema text-decoration-none d-inline-flex align-items-center justify-content-center" style="width: 36px; height: 36px; border-radius: 50%; color:var(--fp-texto-suave); border-color:var(--fp-borde); background:var(--fp-superficie);">
+            <i class="bi bi-twitter-x"></i>
+          </a>
+        </div>
+        <p class="mt-3 mb-0 text-muted" style="font-size: .8rem;">
+          <i class="bi bi-envelope-at me-1"></i> contacto@farmaciaprivada.cl<br>
+          <i class="bi bi-telephone me-1"></i> +56 2 2345 6789
+        </p>
+      </div>
+    </div>
+    
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-center pt-3 border-top" style="border-color:var(--fp-borde)!important;">
+      <span style="font-size:.75rem; color:var(--fp-texto-suave);">
+        &copy; 2026 Farmacia Privada SpA. Todos los derechos reservados.
+      </span>
+      <span style="font-size:.75rem; color:var(--fp-texto-suave); text-align: right;">
+        Desarrollado para el Proyecto Integrado INACAP por <strong>Diego Muñoz</strong><br>
+        <span style="opacity: 0.8;">Estudiante de Ingeniería Informática - INACAP</span>
+      </span>
+    </div>
+  </div>
+</footer>
+{% endif %}
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Modo oscuro -->
+<script>
+(function () {
+  const KEY = 'fp-tema';
+  const html = document.documentElement;
+  const btn  = document.getElementById('btnTema');
+  const icon = document.getElementById('iconaTema');
+
+  function aplicar(tema) {
+    html.setAttribute('data-tema', tema);
+    html.setAttribute('data-bs-theme', tema === 'oscuro' ? 'dark' : 'light');
+    if (icon) {
+      icon.className = tema === 'oscuro' ? 'bi bi-sun' : 'bi bi-moon-stars';
+    }
+    localStorage.setItem(KEY, tema);
+  }
+
+  // Cargar preferencia guardada o del sistema
+  const guardado = localStorage.getItem(KEY);
+  const sistema  = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'oscuro' : '';
+  aplicar(guardado !== null ? guardado : sistema);
+
+  if (btn) {
+    btn.addEventListener('click', () => {
+      const actual = html.getAttribute('data-tema');
+      aplicar(actual === 'oscuro' ? '' : 'oscuro');
+    });
+  }
+
+  // Motor de Accesibilidad: Ajuste de tamaño de fuente
+  const KEY_FONT = 'fp-tamano-fuente';
+  const btnDown  = document.getElementById('btnFontDown');
+  const btnUp    = document.getElementById('btnFontUp');
+
+  const escalas = [90, 100, 110, 120, 130, 140];
+  let escalaActual = 100;
+
+  function aplicarEscala(valor, guardar = true) {
+    valor = parseInt(valor) || 100;
+    if (!escalas.includes(valor)) {
+      valor = escalas.reduce((prev, curr) => Math.abs(curr - valor) < Math.abs(prev - valor) ? curr : prev, 100);
+    }
+    escalaActual = valor;
+    html.style.fontSize = valor + '%';
+    if (btnDown) {
+      btnDown.disabled = (escalaActual <= escalas[0]);
+      btnDown.style.opacity = (escalaActual <= escalas[0]) ? '0.4' : '1';
+      btnDown.title = `Disminuir tamaño de letra (Actual: ${escalaActual}%)`;
+    }
+    if (btnUp) {
+      btnUp.disabled = (escalaActual >= escalas[escalas.length - 1]);
+      btnUp.style.opacity = (escalaActual >= escalas[escalas.length - 1]) ? '0.4' : '1';
+      btnUp.title = `Aumentar tamaño de letra (Actual: ${escalaActual}%)`;
+    }
+    if (guardar) {
+      localStorage.setItem(KEY_FONT, valor);
+    }
+  }
+
+  const guardadoFont = localStorage.getItem(KEY_FONT);
+  aplicarEscala(guardadoFont || 100, false);
+
+  if (btnDown) {
+    btnDown.addEventListener('click', (e) => {
+      e.preventDefault();
+      const idx = escalas.indexOf(escalaActual);
+      if (idx > 0) aplicarEscala(escalas[idx - 1]);
+    });
+  }
+
+  if (btnUp) {
+    btnUp.addEventListener('click', (e) => {
+      e.preventDefault();
+      const idx = escalas.indexOf(escalaActual);
+      if (idx < escalas.length - 1) aplicarEscala(escalas[idx + 1]);
+    });
+  }
+})();
+</script>
+
+{% include 'chatbot.html' %}
+
+<!-- Scroll-Reveal Animation Engine -->
+<script>
+(function () {
+  // IntersectionObserver for scroll-triggered animations
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('fp-visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+  // Auto-detect elements to animate
+  document.addEventListener('DOMContentLoaded', () => {
+    // Animate all cards, indicators, and section labels
+    document.querySelectorAll('.card, .indicador, .seccion-label, .panel-hero, .list-group').forEach((el, i) => {
+      if (!el.classList.contains('fp-animate')) {
+        el.classList.add('fp-animate', 'fp-slide-up');
+        el.style.animationDelay = (i * 0.06) + 's';
+      }
+      observer.observe(el);
+    });
+
+    // Animate table rows
+    document.querySelectorAll('.table tbody tr').forEach((el, i) => {
+      el.classList.add('fp-animate', 'fp-slide-up');
+      el.style.animationDelay = (i * 0.04) + 's';
+      observer.observe(el);
+    });
+  });
+})();
+</script>
+
+{% block extra_scripts %}{% endblock %}
+
+{% if request.user.is_authenticated %}
+<!-- Toast Container for Alerts -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1060;">
+  <!-- Toasts will be injected here via JS -->
+</div>
+
+<!-- Stock Alerts Script -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Solo revisar alertas de stock si estamos autenticados
+  fetch("{% url 'panel:alertas_stock_api' %}")
+    .then(response => response.json())
+    .then(data => {
+      if (data.alertas && data.alertas.length > 0) {
+        const toastContainer = document.querySelector('.toast-container');
+        
+        data.alertas.forEach((alerta, index) => {
+          // Usar sessionStorage para no mostrar la misma alerta en cada recarga de página
+          const alertKey = `stock_alert_dismissed_${alerta.id}`;
+          if (!sessionStorage.getItem(alertKey)) {
+            
+            // Retrasar ligeramente la aparición de múltiples toasts para efecto cascada
+            setTimeout(() => {
+              const toastHtml = `
+                <div class="toast border-0 shadow-lg fp-animate fp-slide-left" role="alert" aria-live="assertive" aria-atomic="true" id="toast-${alerta.id}">
+                  <div class="toast-header border-bottom-0" style="background:var(--fp-superficie-2); color:var(--fp-texto);">
+                    <i class="bi bi-exclamation-triangle-fill text-warning me-2 fs-5"></i>
+                    <strong class="me-auto text-uppercase" style="font-size:0.8rem; letter-spacing:0.05em;">Stock Crítico</strong>
+                    <small class="text-muted">Ahora</small>
+                    <button type="button" class="btn-close ms-2" data-bs-dismiss="toast" aria-label="Close"></button>
+                  </div>
+                  <div class="toast-body" style="background:var(--fp-superficie); color:var(--fp-texto); border-bottom-left-radius: 0.375rem; border-bottom-right-radius: 0.375rem;">
+                    El producto <strong>${alerta.nombre}</strong> tiene stock bajo el mínimo. <br>
+                    <span class="badge bg-danger mt-2">Actual: ${alerta.stock_actual}</span> <span class="badge bg-secondary mt-2">Mínimo: ${alerta.stock_minimo}</span>
+                  </div>
+                </div>
+              `;
+              
+              toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+              const toastElement = document.getElementById(`toast-${alerta.id}`);
+              const toast = new bootstrap.Toast(toastElement, { autohide: false }); // No autohide so they must see it
+              toast.show();
+              
+              // Marcar como visto cuando lo cierran
+              toastElement.addEventListener('hidden.bs.toast', () => {
+                sessionStorage.setItem(alertKey, 'true');
+              });
+              
+            }, index * 400); // 400ms delay between toasts
+          }
+        });
+      }
+    })
+    .catch(error => console.error('Error cargando alertas de stock:', error));
+});
+</script>
+{% endif %}
+
+</body>
+</html>

@@ -1,0 +1,441 @@
+{% extends 'base.html' %}
+{% block title %}Nueva Orden de Compra{% endblock %}
+{% block container_style_attr %}style="max-width: 1050px;"{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-4">
+  <div class="d-flex align-items-center">
+    <a href="{% url 'inventario:orden_lista' %}" class="btn btn-outline-secondary btn-sm me-3" title="Volver al listado">
+      <i class="bi bi-arrow-left"></i>
+    </a>
+    <div>
+      <h1 class="h3 mb-0 fw-bold">Nueva Orden de Compra</h1>
+      <p class="text-muted small mb-0 mt-1">Registrar requerimiento de mercadería y abastecimiento con proveedores</p>
+    </div>
+  </div>
+  <a href="{% url 'inventario:proveedor_lista' %}" class="btn btn-outline-primary btn-sm">
+    <i class="bi bi-building me-1"></i>Gestionar Proveedores
+  </a>
+</div>
+
+<form method="post" novalidate id="ordenForm">
+  {% csrf_token %}
+  
+  {# DATOS DEL DOCUMENTO Y PROVEEDOR #}
+  <div class="card shadow-sm border-0 mb-4" style="animation: alertSlideIn .3s ease both;">
+    <div class="card-header bg-transparent pt-4 pb-2 border-bottom-0 d-flex justify-content-between align-items-center">
+      <h2 class="h5 fw-bold text-primary mb-0"><i class="bi bi-file-earmark-text me-2"></i>Datos del Documento</h2>
+      <button type="button" class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#modalNuevoProveedor">
+        <i class="bi bi-plus-circle me-1"></i>+ Nuevo Proveedor
+      </button>
+    </div>
+    <div class="card-body pt-2">
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label for="{{ form.proveedor.id_for_label }}" class="form-label small text-muted mb-1 fw-semibold">
+            Proveedor <span class="text-danger">*</span>
+          </label>
+          {{ form.proveedor }}
+          {% if form.proveedor.errors %}
+            <div class="text-danger small mt-1"><i class="bi bi-exclamation-triangle me-1"></i>{{ form.proveedor.errors.0 }}</div>
+          {% endif %}
+        </div>
+
+        <div class="col-md-6">
+          <label for="{{ form.numero_factura.id_for_label }}" class="form-label small text-muted mb-1 fw-semibold">
+            {{ form.numero_factura.label }}
+          </label>
+          {{ form.numero_factura }}
+          {% if form.numero_factura.errors %}
+            <div class="text-danger small mt-1"><i class="bi bi-exclamation-triangle me-1"></i>{{ form.numero_factura.errors.0 }}</div>
+          {% endif %}
+          <div class="form-text small text-muted">Opcional. N° de factura, guía de despacho o nota de pedido.</div>
+        </div>
+
+        <div class="col-12">
+          <label for="{{ form.observaciones.id_for_label }}" class="form-label small text-muted mb-1 fw-semibold">
+            {{ form.observaciones.label }}
+          </label>
+          {{ form.observaciones }}
+          {% if form.observaciones.errors %}
+            <div class="text-danger small mt-1"><i class="bi bi-exclamation-triangle me-1"></i>{{ form.observaciones.errors.0 }}</div>
+          {% endif %}
+        </div>
+      </div>
+
+      {# Tarjeta de Información Detallada del Proveedor Seleccionado #}
+      <div id="proveedorInfoCard" class="card mt-3 border-0 bg-light-subtle p-3 rounded-3" style="display: none; border-left: 4px solid var(--bs-primary) !important;">
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-2 pb-2 border-bottom">
+          <div class="d-flex align-items-center gap-2">
+            <span class="p-2 bg-primary-subtle text-primary rounded-circle">
+              <i class="bi bi-building"></i>
+            </span>
+            <div>
+              <h6 class="mb-0 fw-bold" id="infoProvNombre">—</h6>
+              <span class="small text-muted" id="infoProvGiro">—</span>
+            </div>
+          </div>
+          <span class="badge bg-primary text-white font-mono px-3 py-2" id="infoProvRut">RUT: —</span>
+        </div>
+        <div class="row g-2 small text-muted">
+          <div class="col-sm-6 col-md-3">
+            <i class="bi bi-person me-1 text-primary"></i><strong class="text-body">Contacto:</strong>
+            <div id="infoProvContacto" class="text-truncate">—</div>
+          </div>
+          <div class="col-sm-6 col-md-3">
+            <i class="bi bi-telephone me-1 text-primary"></i><strong class="text-body">Teléfono:</strong>
+            <div id="infoProvTelefono" class="text-truncate">—</div>
+          </div>
+          <div class="col-sm-6 col-md-3">
+            <i class="bi bi-envelope me-1 text-primary"></i><strong class="text-body">Email:</strong>
+            <div id="infoProvEmail" class="text-truncate">—</div>
+          </div>
+          <div class="col-sm-6 col-md-3">
+            <i class="bi bi-geo-alt me-1 text-primary"></i><strong class="text-body">Dirección:</strong>
+            <div id="infoProvDireccion" class="text-truncate">—</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="proveedorEmptyNotice" class="text-muted small mt-2 py-2">
+        <i class="bi bi-info-circle me-1 text-primary"></i>Seleccione un proveedor para visualizar su ficha completa con RUT, contacto y datos de facturación.
+      </div>
+    </div>
+  </div>
+
+  {# DETALLE DE PRODUCTOS SOLICITADOS (SIN N° DE LOTE) #}
+  <div class="card shadow-sm border-0 mb-4" style="animation: alertSlideIn .4s ease both;">
+    <div class="card-header bg-transparent pt-4 pb-2">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <h2 class="h5 fw-bold text-primary mb-0"><i class="bi bi-boxes me-2"></i>Detalle de Productos Solicitados</h2>
+          <p class="small text-muted mt-1 mb-0">
+            Indique los productos a comprar y su costo. Los números de lote serán entregados por el proveedor al recepcionar la mercadería.
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="card-body p-0">
+      {{ detalles.management_form }}
+      <div class="table-responsive">
+        <table class="table table-borderless align-middle mb-0" id="tablaDetalles">
+          <thead class="table-light">
+            <tr>
+              <th class="ps-4" style="min-width: 250px;">Producto</th>
+              <th style="min-width: 170px;">Vencimiento del lote (si se conoce)</th>
+              <th style="width: 130px;">Cantidad</th>
+              <th style="width: 160px;">Costo Unit.</th>
+              <th style="width: 140px;" class="text-end">Subtotal</th>
+              <th class="pe-4" style="width: 50px;"></th>
+            </tr>
+          </thead>
+          <tbody id="detallesBody">
+            {% for detalle_form in detalles %}
+              <tr class="formset-row" style="border-bottom: 1px solid var(--fp-borde);">
+                <td class="ps-4">
+                  {{ detalle_form.id }}
+                  {{ detalle_form.producto }}
+                  {% if detalle_form.producto.errors %}<div class="text-danger small mt-1">{{ detalle_form.producto.errors.0 }}</div>{% endif %}
+                </td>
+                <td>
+                  {{ detalle_form.fecha_vencimiento }}
+                  {% if detalle_form.fecha_vencimiento.errors %}<div class="text-danger small mt-1">{{ detalle_form.fecha_vencimiento.errors.0 }}</div>{% endif %}
+                </td>
+                <td>
+                  {{ detalle_form.cantidad }}
+                  {% if detalle_form.cantidad.errors %}<div class="text-danger small mt-1">{{ detalle_form.cantidad.errors.0 }}</div>{% endif %}
+                </td>
+                <td>
+                  <div class="input-group">
+                    <span class="input-group-text">$</span>
+                    {{ detalle_form.precio_unitario }}
+                  </div>
+                  {% if detalle_form.precio_unitario.errors %}<div class="text-danger small mt-1">{{ detalle_form.precio_unitario.errors.0 }}</div>{% endif %}
+                </td>
+                <td class="text-end fw-semibold tabular text-primary row-subtotal">
+                  $0
+                </td>
+                <td class="pe-4 text-end">
+                  {% if detalles.can_delete %}
+                    <span class="d-none">{{ detalle_form.DELETE }}</span>
+                    <button type="button" class="btn btn-sm btn-outline-danger btn-remove" title="Quitar línea"><i class="bi bi-trash"></i></button>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+          <tfoot>
+            <tr class="table-light border-top">
+              <td colspan="4" class="text-end pe-3 fw-bold text-muted small text-uppercase">Total Estimado Orden:</td>
+              <td class="text-end tabular fw-bold text-success fs-5" id="totalOrdenGeneral">$0</td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      <div class="p-3 bg-light text-center border-top">
+        <button type="button" class="btn btn-sm btn-outline-primary" id="btnAddRow">
+          <i class="bi bi-plus-circle me-1"></i>Añadir otro producto
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="d-flex justify-content-end gap-2 mb-5">
+    <a href="{% url 'inventario:orden_lista' %}" class="btn btn-light px-4">Cancelar</a>
+    <button type="submit" class="btn btn-primary px-4 fw-semibold shadow-sm">
+      <i class="bi bi-check2-circle me-1"></i>Registrar Orden de Compra
+    </button>
+  </div>
+</form>
+
+{# Plantilla oculta para nuevas filas del formset (SIN N° DE LOTE) #}
+<table class="d-none">
+  <tbody id="emptyRowTemplate">
+    <tr class="formset-row" style="border-bottom: 1px solid var(--fp-borde);">
+      <td class="ps-4">{{ detalles.empty_form.id }}{{ detalles.empty_form.producto }}</td>
+      <td>{{ detalles.empty_form.fecha_vencimiento }}</td>
+      <td>{{ detalles.empty_form.cantidad }}</td>
+      <td>
+        <div class="input-group">
+          <span class="input-group-text">$</span>
+          {{ detalles.empty_form.precio_unitario }}
+        </div>
+      </td>
+      <td class="text-end fw-semibold tabular text-primary row-subtotal">
+        $0
+      </td>
+      <td class="pe-4 text-end">
+        <span class="d-none">{{ detalles.empty_form.DELETE }}</span>
+        <button type="button" class="btn btn-sm btn-outline-danger btn-remove"><i class="bi bi-trash"></i></button>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+{# MODAL PARA CREACIÓN RÁPIDA DE PROVEEDOR #}
+<div class="modal fade" id="modalNuevoProveedor" tabindex="-1" aria-labelledby="modalNuevoProveedorLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-light">
+        <h5 class="modal-title fw-bold" id="modalNuevoProveedorLabel">
+          <i class="bi bi-building me-2 text-primary"></i>Registrar Nuevo Proveedor
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <form id="formNuevoProveedorModal">
+        <div class="modal-body p-4">
+          <div id="modalProvAlert" class="alert alert-danger d-none" role="alert"></div>
+          <div class="row g-3">
+            <div class="col-md-7">
+              <label class="form-label small text-muted mb-1 fw-semibold">Razón Social / Nombre <span class="text-danger">*</span></label>
+              <input type="text" name="nombre" class="form-control" placeholder="Ej: Laboratorio Chile S.A." required>
+            </div>
+            <div class="col-md-5">
+              <label class="form-label small text-muted mb-1 fw-semibold">RUT Empresa</label>
+              <input type="text" name="rut" class="form-control font-mono" placeholder="Ej: 76.123.456-7">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small text-muted mb-1 fw-semibold">Giro comercial / Rubro</label>
+              <input type="text" name="giro" class="form-control" placeholder="Ej: Distribución Farmacéutica">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small text-muted mb-1 fw-semibold">Persona / Ejecutivo de Contacto</label>
+              <input type="text" name="contacto_nombre" class="form-control" placeholder="Ej: Juan Carlos Pérez">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small text-muted mb-1 fw-semibold">Teléfono</label>
+              <input type="text" name="telefono" class="form-control" placeholder="Ej: +56 2 2987 6543">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small text-muted mb-1 fw-semibold">Correo Electrónico</label>
+              <input type="email" name="email" class="form-control" placeholder="Ej: ventas@proveedor.cl">
+            </div>
+            <div class="col-md-8">
+              <label class="form-label small text-muted mb-1 fw-semibold">Dirección</label>
+              <input type="text" name="direccion" class="form-control" placeholder="Ej: Av. Providencia 1234">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small text-muted mb-1 fw-semibold">Ciudad / Comuna</label>
+              <input type="text" name="ciudad" class="form-control" value="Santiago" placeholder="Ej: Santiago">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer bg-light">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary btn-sm" id="btnGuardarProveedorModal">
+            <i class="bi bi-check-circle me-1"></i>Guardar y Seleccionar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script id="proveedores-data" type="application/json">{{ proveedores_json|safe|default:'{}' }}</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Datos locales de proveedores cargados desde el servidor
+  const provsEl = document.getElementById('proveedores-data');
+  let proveedoresMap = {};
+  if (provsEl) {
+    try {
+      proveedoresMap = JSON.parse(provsEl.textContent || '{}');
+    } catch (e) {
+      proveedoresMap = {};
+    }
+  }
+
+  const selectProveedor = document.getElementById('id_proveedor');
+  const infoCard = document.getElementById('proveedorInfoCard');
+  const emptyNotice = document.getElementById('proveedorEmptyNotice');
+
+  function actualizarFichaProveedor() {
+    const provId = selectProveedor ? selectProveedor.value : '';
+    if (provId && proveedoresMap[provId]) {
+      const p = proveedoresMap[provId];
+      document.getElementById('infoProvNombre').textContent = p.nombre || '—';
+      document.getElementById('infoProvGiro').textContent = p.giro || '—';
+      document.getElementById('infoProvRut').textContent = 'RUT: ' + (p.rut || 'Sin RUT');
+      document.getElementById('infoProvContacto').textContent = p.contacto || '—';
+      document.getElementById('infoProvTelefono').textContent = p.telefono || '—';
+      document.getElementById('infoProvEmail').textContent = p.email || '—';
+      document.getElementById('infoProvDireccion').textContent = p.direccion || '—';
+      infoCard.style.display = 'block';
+      if (emptyNotice) emptyNotice.style.display = 'none';
+    } else {
+      infoCard.style.display = 'none';
+      if (emptyNotice) emptyNotice.style.display = 'block';
+    }
+  }
+
+  if (selectProveedor) {
+    selectProveedor.addEventListener('change', actualizarFichaProveedor);
+    actualizarFichaProveedor();
+  }
+
+  // Cálculos dinámicos de Subtotal y Total General
+  function formatMoney(amount) {
+    return '$' + Math.round(amount).toLocaleString('es-CL');
+  }
+
+  function recalcularFila(row) {
+    const cantInput = row.querySelector('input[name$="-cantidad"]');
+    const precioInput = row.querySelector('input[name$="-precio_unitario"]');
+    const subtotalEl = row.querySelector('.row-subtotal');
+    
+    const cantidad = parseFloat(cantInput ? cantInput.value : 0) || 0;
+    const precio = parseFloat(precioInput ? precioInput.value : 0) || 0;
+    const subtotal = cantidad * precio;
+
+    if (subtotalEl) {
+      subtotalEl.textContent = formatMoney(subtotal);
+    }
+    return subtotal;
+  }
+
+  function recalcularTotalGeneral() {
+    let granTotal = 0;
+    document.querySelectorAll('#detallesBody tr.formset-row').forEach(row => {
+      const deleteCheck = row.querySelector('input[type="checkbox"][name$="-DELETE"]');
+      if (!deleteCheck || !deleteCheck.checked) {
+        granTotal += recalcularFila(row);
+      }
+    });
+    const totalEl = document.getElementById('totalOrdenGeneral');
+    if (totalEl) {
+      totalEl.textContent = formatMoney(granTotal);
+    }
+  }
+
+  // Escuchar cambios de cantidad y costo
+  document.getElementById('detallesBody').addEventListener('input', function(e) {
+    if (e.target.matches('input[name$="-cantidad"], input[name$="-precio_unitario"]')) {
+      recalcularTotalGeneral();
+    }
+  });
+
+  // Agregar filas dinámicas
+  const btnAdd = document.getElementById('btnAddRow');
+  const tbody = document.getElementById('detallesBody');
+  const template = document.getElementById('emptyRowTemplate').innerHTML;
+  const totalForms = document.getElementById('id_detalles-TOTAL_FORMS');
+  
+  if (btnAdd) {
+    btnAdd.addEventListener('click', function() {
+      const currentCount = parseInt(totalForms.value);
+      const newRowHtml = template.replace(/__prefix__/g, currentCount);
+      tbody.insertAdjacentHTML('beforeend', newRowHtml);
+      totalForms.value = currentCount + 1;
+      recalcularTotalGeneral();
+    });
+  }
+
+  // Quitar filas
+  tbody.addEventListener('click', function(e) {
+    if (e.target.closest('.btn-remove')) {
+      const row = e.target.closest('tr');
+      const deleteInput = row.querySelector('input[type="checkbox"][name$="-DELETE"]');
+      if (deleteInput) {
+        deleteInput.checked = true;
+        row.style.display = 'none';
+      } else {
+        row.remove();
+      }
+      recalcularTotalGeneral();
+    }
+  });
+
+  // Calcular total inicial
+  recalcularTotalGeneral();
+
+  // Guardar nuevo proveedor vía modal
+  const formModal = document.getElementById('formNuevoProveedorModal');
+  const modalEl = document.getElementById('modalNuevoProveedor');
+  const modalAlert = document.getElementById('modalProvAlert');
+
+  if (formModal) {
+    formModal.addEventListener('submit', function(e) {
+      e.preventDefault();
+      modalAlert.classList.add('d-none');
+      const formData = new FormData(formModal);
+      const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+      fetch("{% url 'inventario:proveedor_api_crear' %}", {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': csrftoken,
+        },
+        body: formData,
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.proveedor) {
+          const prov = data.proveedor;
+          // Guardar en mapa local
+          proveedoresMap[String(prov.id)] = prov;
+
+          // Añadir opción al select y seleccionarla
+          const newOption = new Option(prov.nombre + (prov.rut !== 'Sin RUT' ? ` (${prov.rut})` : ''), prov.id, true, true);
+          selectProveedor.add(newOption);
+          actualizarFichaProveedor();
+
+          // Cerrar modal y limpiar
+          const bsModal = bootstrap.Modal.getInstance(modalEl);
+          if (bsModal) bsModal.hide();
+          formModal.reset();
+        } else {
+          modalAlert.textContent = 'Error al registrar el proveedor. Verifique los datos ingresados.';
+          modalAlert.classList.remove('d-none');
+        }
+      })
+      .catch(err => {
+        modalAlert.textContent = 'Ocurrió un error al procesar la solicitud.';
+        modalAlert.classList.remove('d-none');
+      });
+    });
+  }
+});
+</script>
+{% endblock %}

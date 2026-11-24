@@ -1,0 +1,16 @@
+venv/
+__pycache__/
+*.pyc
+db.sqlite3
+.env
+*.exe
+staticfiles/
+media/
+.vscode/
+.venv/
+.env.*
+!.env.example
+*.sqlite3*
+/informe_texto.txt
+/req_det_texto.txt
+/req_texto.txt

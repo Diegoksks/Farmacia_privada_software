@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %}Anular venta{% endblock %}
+{% block content %}
+<div class="card shadow-sm">
+  <div class="card-body">
+    <h1 class="h4 mb-1">Anular venta #{{ venta.pk }}</h1>
+    <p class="text-muted small mb-3">Total: ${{ venta.total }} CLP — esto reintegra el stock a los mismos lotes de origen.</p>
+    <form method="post">
+      {% csrf_token %}
+      {% if form.non_field_errors %}<div class="alert alert-danger py-2">{{ form.non_field_errors }}</div>{% endif %}
+      {% for field in form %}
+        <div class="mb-3">
+          <label class="form-label">{{ field.label }}</label>
+          {{ field }}
+          {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors|join:', ' }}</div>{% endif %}
+        </div>
+      {% endfor %}
+      <button type="submit" class="btn btn-danger w-100">Confirmar anulación</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

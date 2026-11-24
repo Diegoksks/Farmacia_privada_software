@@ -1,0 +1,356 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard — Farmacia Privada{% endblock %}
+{% block container_style_attr %}style="max-width: 1200px;"{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+
+<!-- Encabezado -->
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+  <div>
+    <h1 class="h3 mb-0">Dashboard comercial</h1>
+    <p class="text-muted small mb-0 mt-1">Indicadores en tiempo real de la operación de la farmacia</p>
+  </div>
+  <div class="d-flex gap-2 flex-wrap">
+    <a href="{% url 'reportes:reporte_ventas' %}" class="btn btn-sm btn-outline-primary">
+      <i class="bi bi-receipt me-1"></i>Reporte ventas
+    </a>
+    <a href="{% url 'reportes:reporte_inventario' %}" class="btn btn-sm btn-outline-primary">
+      <i class="bi bi-boxes me-1"></i>Reporte inventario
+    </a>
+  </div>
+</div>
+
+<!-- Tarjetas KPI -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3">
+    <div class="card h-100 indicador indicador-primary">
+      <div class="card-body py-3">
+        <div class="seccion-label mb-1">Ventas de hoy</div>
+        <div class="valor-indicador text-primary">${{ ventas_hoy|floatformat:"0" }}</div>
+        <div class="text-muted mt-1" style="font-size:.8rem;">Solo ventas completadas</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card h-100 indicador indicador-success">
+      <div class="card-body py-3">
+        <div class="seccion-label mb-1">Mes actual</div>
+        <div class="valor-indicador text-success">${{ ventas_mes_actual|floatformat:"0" }}</div>
+        <div class="text-muted mt-1" style="font-size:.8rem;">Ventas acumuladas</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card h-100 indicador indicador-secondary">
+      <div class="card-body py-3">
+        <div class="seccion-label mb-1">Mes anterior</div>
+        <div class="valor-indicador">${{ ventas_mes_anterior|floatformat:"0" }}</div>
+        <div class="text-muted mt-1" style="font-size:.8rem;">Para comparación</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card h-100 indicador {% if variacion_pct and variacion_pct > 0 %}indicador-success{% elif variacion_pct and variacion_pct < 0 %}indicador-danger{% else %}indicador-secondary{% endif %}">
+      <div class="card-body py-3">
+        <div class="seccion-label mb-1">Variación mensual</div>
+        <div class="valor-indicador {% if variacion_pct and variacion_pct > 0 %}text-success{% elif variacion_pct and variacion_pct < 0 %}text-danger{% endif %}">
+          {% if variacion_pct is not None %}
+            {% if variacion_pct > 0 %}<i class="bi bi-arrow-up-short"></i>{% elif variacion_pct < 0 %}<i class="bi bi-arrow-down-short"></i>{% endif %}
+            {{ variacion_pct }}%
+          {% else %}—{% endif %}
+        </div>
+        <div class="text-muted mt-1" style="font-size:.8rem;">vs. mes anterior</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Gráficos: línea 30 días + dona por método de pago -->
+<div class="row g-3 mb-4">
+  <div class="col-lg-8">
+    <div class="card h-100">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-graph-up me-2 text-primary"></i>Ventas últimos 30 días</span>
+      </div>
+      <div class="card-body">
+        <div class="chart-wrap">
+          <canvas id="chartDias"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="card h-100">
+      <div class="card-header">
+        <i class="bi bi-pie-chart me-2 text-primary"></i>Por método de pago
+      </div>
+      <div class="card-body d-flex align-items-center justify-content-center">
+        <div style="max-width:220px; width:100%">
+          <canvas id="chartPago"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Top productos + Productos más rentables -->
+<div class="row g-3 mb-4">
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header">
+        <i class="bi bi-star me-2 text-primary"></i>Top 5 — más vendidos del mes
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-hover table-sm mb-0">
+          <thead>
+            <tr>
+              <th class="ps-3">#</th>
+              <th>Producto</th>
+              <th class="text-end">Unid.</th>
+              <th class="text-end pe-3">Monto</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in top_productos %}
+            <tr>
+              <td class="ps-3 text-muted">{{ forloop.counter }}</td>
+              <td>{{ p.producto__nombre }}</td>
+              <td class="text-end tabular">{{ p.cantidad_total }}</td>
+              <td class="text-end tabular pe-3">${{ p.monto_total|floatformat:"0" }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="text-center text-muted py-3">Sin ventas este mes.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header">
+        <i class="bi bi-cash-stack me-2 text-primary"></i>Más rentables del mes
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-hover table-sm mb-0">
+          <thead>
+            <tr>
+              <th class="ps-3">Producto</th>
+              <th class="text-end">Unid.</th>
+              <th class="text-end pe-3">Total $</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in productos_rentables %}
+            <tr>
+              <td class="ps-3">{{ p.producto__nombre }}</td>
+              <td class="text-end tabular">{{ p.cantidad_total }}</td>
+              <td class="text-end tabular pe-3">${{ p.monto_total|floatformat:"0" }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="3" class="text-center text-muted py-3">Sin ventas.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Stock crítico + Vencimientos -->
+<div class="row g-3 mb-4">
+  <div class="col-md-6">
+    <div class="card h-100 border-danger" style="border-left:4px solid var(--bs-danger)!important;">
+      <div class="card-header text-danger">
+        <i class="bi bi-exclamation-triangle me-2"></i>Stock crítico ({{ productos_stock_critico|length }})
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-sm mb-0">
+          <thead><tr><th class="ps-3">Producto</th><th class="text-end">Stock</th><th class="text-end pe-3">Mínimo</th></tr></thead>
+          <tbody>
+            {% for p in productos_stock_critico %}
+            <tr>
+              <td class="ps-3">{{ p.nombre }}</td>
+              <td class="text-end tabular {% if p.stock_actual == 0 %}text-danger fw-bold{% else %}text-warning fw-semibold{% endif %}">{{ p.stock_actual }}</td>
+              <td class="text-end tabular pe-3 text-muted">{{ p.stock_minimo }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="3" class="text-center text-muted py-3"><i class="bi bi-check-circle text-success me-1"></i>Todo sobre el mínimo.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card h-100 border-warning" style="border-left:4px solid #e6a817!important;">
+      <div class="card-header" style="color:#a07000;">
+        <i class="bi bi-clock-history me-2"></i>Vencen en 90 días ({{ lotes_por_vencer|length }})
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-sm mb-0">
+          <thead><tr><th class="ps-3">Producto</th><th>Lote</th><th class="text-end pe-3">Vence</th></tr></thead>
+          <tbody>
+            {% for lote in lotes_por_vencer %}
+            <tr>
+              <td class="ps-3">{{ lote.producto.nombre }}</td>
+              <td class="font-mono">{{ lote.numero_lote }}</td>
+              <td class="text-end tabular pe-3 {% if lote.dias_para_vencer <= 30 %}text-danger fw-semibold{% elif lote.dias_para_vencer <= 60 %}text-warning fw-semibold{% endif %}">
+                {{ lote.fecha_vencimiento|date:"d-m-Y" }}
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="3" class="text-center text-muted py-3"><i class="bi bi-check-circle text-success me-1"></i>Sin vencimientos próximos.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Predicción de demanda -->
+{% if prediccion_demanda %}
+<div class="row g-3 mb-4">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <i class="bi bi-lightning me-2 text-primary"></i>Predicción de demanda próximo mes
+        <span class="text-muted ms-2" style="font-size:.78rem; font-weight:400;">(promedio 3 meses × 1.1)</span>
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-hover table-sm mb-0">
+          <thead>
+            <tr>
+              <th class="ps-3">Producto</th>
+              <th class="text-end">Vendido 3m</th>
+              <th class="text-end">Prom/mes</th>
+              <th class="text-end pe-3">Predicción</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in prediccion_demanda %}
+            <tr>
+              <td class="ps-3">{{ p.nombre }}</td>
+              <td class="text-end tabular">{{ p.vendido_3m }}</td>
+              <td class="text-end tabular">{{ p.promedio_mes }}</td>
+              <td class="text-end tabular pe-3 fw-semibold text-primary">{{ p.prediccion }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Stock por categoría -->
+<div class="row g-3">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <i class="bi bi-grid me-2 text-primary"></i>Stock por categoría
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-hover table-sm mb-0">
+          <thead>
+            <tr>
+              <th class="ps-3">Categoría</th>
+              <th class="text-end">Productos activos</th>
+              <th class="text-end pe-3">Unidades en stock</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in stock_por_categoria %}
+            <tr>
+              <td class="ps-3">{{ c.nombre }}</td>
+              <td class="text-end tabular">{{ c.productos_activos }}</td>
+              <td class="text-end tabular pe-3 {% if c.unidades == 0 %}text-danger{% endif %}">{{ c.unidades }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="3" class="text-muted text-center py-3">Sin categorías.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const MODO_OSCURO = document.documentElement.getAttribute('data-tema') === 'oscuro';
+const COLOR_TEXTO  = MODO_OSCURO ? '#b5c4c3' : '#6b7280';
+const COLOR_BORDE  = MODO_OSCURO ? '#2d3135' : '#e4e4e0';
+const ACENTO       = '#136f63';
+
+Chart.defaults.font.family = "'Manrope', system-ui, sans-serif";
+Chart.defaults.color       = COLOR_TEXTO;
+
+// Gráfico de barras: ventas por día (30 días)
+new Chart(document.getElementById('chartDias'), {
+  type: 'bar',
+  data: {
+    labels:   {{ chart_30d_labels|safe }},
+    datasets: [{
+      label: 'Ventas ($)',
+      data:   {{ chart_30d_montos|safe }},
+      backgroundColor: ACENTO + '99',
+      borderColor:     ACENTO,
+      borderWidth: 1,
+      borderRadius: 4,
+      borderSkipped: false,
+    }],
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { color: COLOR_BORDE }, ticks: { maxTicksLimit: 12, font: { size: 11 } } },
+      y: { grid: { color: COLOR_BORDE }, ticks: { callback: v => '$' + v.toLocaleString('es-CL') } },
+    },
+  },
+});
+
+// Gráfico de dona: por método de pago
+const labPago  = {{ chart_pago_labels|safe }};
+const montPago = {{ chart_pago_montos|safe }};
+if (labPago.length) {
+  new Chart(document.getElementById('chartPago'), {
+    type: 'doughnut',
+    data: {
+      labels:   labPago,
+      datasets: [{
+        data: montPago,
+        backgroundColor: ['#136f63','#1e9e8e','#2bc5b4','#60e6d8','#a8f4ee'],
+        borderWidth: 2,
+        borderColor: MODO_OSCURO ? '#1a1d1e' : '#ffffff',
+      }],
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 10 } },
+        tooltip: { callbacks: { label: ctx => ' $' + ctx.parsed.toLocaleString('es-CL') } },
+      },
+      cutout: '65%',
+    },
+  });
+} else {
+  document.getElementById('chartPago').closest('.card-body').innerHTML =
+    '<p class="text-muted text-center py-4 mb-0">Sin ventas este mes.</p>';
+}
+
+// Actualizar gráficos si el usuario cambia el tema
+document.getElementById('btnTema')?.addEventListener('click', () => {
+  setTimeout(() => location.reload(), 300);
+});
+</script>
+{% endblock %}

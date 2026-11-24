@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% block title %}Afiliaciones a Convenios{% endblock %}
+{% block container_style_attr %}style="max-width: 1000px;"{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+  <div>
+    <h1 class="h3 mb-0 fw-bold">Afiliaciones a Convenios</h1>
+    <p class="text-muted small mb-0 mt-1">Registro de clientes vinculados a Isapres y Seguros Complementarios</p>
+  </div>
+</div>
+
+<div class="card mb-4 shadow-sm border-0" style="animation: alertSlideIn .3s ease both;">
+  <div class="card-body">
+    <form method="get" class="row g-3 align-items-end">
+      <div class="col-md-5">
+        <label class="form-label small text-muted mb-1">Buscar Cliente o Convenio</label>
+        <div class="input-group">
+          <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+          <input type="text" name="q" value="{{ filtros.q }}" class="form-control" placeholder="RUT, Nombre, Isapre...">
+        </div>
+      </div>
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-primary w-100">
+          <i class="bi bi-funnel me-1"></i>Filtrar
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card shadow-sm border-0" style="animation: alertSlideIn .4s ease both;">
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover table-borderless align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th class="ps-4">Cliente</th>
+            <th>RUT</th>
+            <th>Convenio</th>
+            <th>Nº Afiliado</th>
+            <th>Vigencia</th>
+            <th class="text-center pe-4">Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+
+          {% for afi in afiliaciones %}
+            <tr style="border-bottom: 1px solid var(--fp-borde);">
+              <td class="ps-4 fw-medium">{{ afi.cliente.nombre_completo }}</td>
+              <td class="text-muted small">{{ afi.cliente.rut }}</td>
+              <td class="fw-medium">
+                {% if afi.convenio.tipo == 'ISAPRE' %}
+                  <span class="badge bg-primary-subtle text-primary me-1"><i class="bi bi-heart-pulse"></i></span>
+                {% else %}
+                  <span class="badge bg-info-subtle text-info me-1"><i class="bi bi-shield-check"></i></span>
+                {% endif %}
+                {{ afi.convenio.nombre }}
+              </td>
+              <td class="font-mono text-muted small">{{ afi.numero_afiliado|default:"—" }}</td>
+              <td class="text-muted small">
+                {{ afi.vigente_desde|date:"d M Y" }} a 
+                {% if afi.vigente_hasta %}{{ afi.vigente_hasta|date:"d M Y" }}{% else %}<span class="fst-italic">Indefinido</span>{% endif %}
+              </td>
+              <td class="text-center pe-4">
+                {% now "Y-m-d" as current_date %}
+                {% if afi.vigente_desde|date:"Y-m-d" <= current_date and not afi.vigente_hasta or afi.vigente_hasta|date:"Y-m-d" >= current_date %}
+                  <span class="badge bg-success-subtle text-success"><i class="bi bi-check-circle me-1"></i>Vigente</span>
+                {% else %}
+                  <span class="badge bg-secondary-subtle text-secondary"><i class="bi bi-x-circle me-1"></i>Inactivo</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="6" class="text-center text-muted py-5"><i class="bi bi-inbox fs-2 d-block mb-2 text-secondary"></i>No se encontraron afiliaciones.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% if is_paginated %}
+    <div class="card-footer bg-white border-0 py-3">
+      <nav aria-label="Paginación">
+        <ul class="pagination justify-content-center mb-0">
+          {% if page_obj.has_previous %}
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if filtros.q %}&q={{ filtros.q }}{% endif %}">Anterior</a></li>
+          {% else %}
+            <li class="page-item disabled"><span class="page-link">Anterior</span></li>
+          {% endif %}
+          
+          <li class="page-item disabled"><span class="page-link">Página {{ page_obj.number }} de {{ paginator.num_pages }}</span></li>
+          
+          {% if page_obj.has_next %}
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}{% if filtros.q %}&q={{ filtros.q }}{% endif %}">Siguiente</a></li>
+          {% else %}
+            <li class="page-item disabled"><span class="page-link">Siguiente</span></li>
+          {% endif %}
+        </ul>
+      </nav>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

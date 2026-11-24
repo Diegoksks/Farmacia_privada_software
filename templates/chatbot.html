@@ -1,0 +1,375 @@
+<style>
+#fp-chatbot-widget {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 1050;
+  width: 350px;
+  background: var(--bs-body-bg);
+  border-radius: 12px;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--fp-borde);
+  transition: opacity 0.3s ease;
+}
+#fp-chatbot-header {
+  background: linear-gradient(135deg, var(--fp-acento), #059669);
+  color: white;
+  padding: 12px 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: grab; /* Indica que es arrastrable */
+  user-select: none;
+}
+#fp-chatbot-header:active {
+  cursor: grabbing;
+}
+#fp-chatbot-body {
+  height: 300px;
+  overflow-y: auto;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-size: 0.9rem;
+  background-color: var(--bs-body-bg);
+}
+.chat-msg-wrapper {
+  display: flex;
+  flex-direction: column;
+  max-width: 85%;
+}
+.chat-msg-wrapper.bot {
+  align-self: flex-start;
+}
+.chat-msg-wrapper.user {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+.chat-msg {
+  padding: 10px 14px;
+  border-radius: 15px;
+  line-height: 1.4;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.chat-msg-wrapper.bot .chat-msg {
+  background: var(--fp-fondo-secundario);
+  color: var(--bs-body-color);
+  border-bottom-left-radius: 4px;
+}
+.chat-msg-wrapper.user .chat-msg {
+  background: var(--fp-acento);
+  color: white;
+  border-bottom-right-radius: 4px;
+}
+.chat-date {
+  font-size: 0.7rem;
+  color: #888;
+  margin-top: 4px;
+  margin-left: 4px;
+  margin-right: 4px;
+}
+#fp-chatbot-input-container {
+  display: flex;
+  border-top: 1px solid var(--fp-borde);
+  padding: 12px;
+  background: var(--fp-fondo-secundario);
+}
+#fp-chatbot-input {
+  flex-grow: 1;
+  border: 1px solid var(--fp-borde);
+  border-radius: 20px;
+  padding: 8px 15px;
+  outline: none;
+  background: var(--bs-body-bg);
+  color: var(--bs-body-color);
+  transition: border-color 0.2s;
+}
+#fp-chatbot-input:focus {
+  border-color: var(--fp-acento);
+}
+#fp-chatbot-send {
+  background: var(--fp-acento);
+  border: none;
+  color: white;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  margin-left: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s;
+}
+#fp-chatbot-send:hover {
+  transform: scale(1.05);
+}
+#fp-chatbot-toggle {
+  position: fixed;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--fp-acento), #059669);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+  cursor: grab;
+  z-index: 1049;
+  border: none;
+  transition: transform 0.2s;
+  user-select: none;
+}
+#fp-chatbot-toggle:active {
+  cursor: grabbing;
+}
+#fp-chatbot-toggle:hover {
+  transform: scale(1.05);
+}
+</style>
+
+<button id="fp-chatbot-toggle" onclick="toggleChatbot()">
+  <i class="bi bi-robot"></i>
+</button>
+
+<div id="fp-chatbot-widget">
+  <div id="fp-chatbot-header">
+    <div class="fw-bold"><i class="bi bi-robot me-2"></i>Asistente IA</div>
+    <i class="bi bi-x-lg" style="cursor:pointer;" onclick="toggleChatbot(event)"></i>
+  </div>
+  <div id="fp-chatbot-body">
+    <!-- El historial se cargará aquí dinámicamente -->
+  </div>
+  <div id="fp-chatbot-input-container">
+    <input type="text" id="fp-chatbot-input" placeholder="Pregunta sobre inventario..." onkeypress="if(event.key === 'Enter') sendChatMessage()">
+    <button id="fp-chatbot-send" onclick="sendChatMessage()"><i class="bi bi-send-fill"></i></button>
+  </div>
+</div>
+
+<script>
+// --- Lógica de Arrastre (Draggable) ---
+function makeDraggable(elmnt, handle) {
+  let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+  let isDragging = false;
+
+  handle.onmousedown = dragMouseDown;
+
+  function dragMouseDown(e) {
+    // Si se hizo click en el botón de cerrar, no arrastrar
+    if (e.target.classList.contains('bi-x-lg')) return;
+    
+    e = e || window.event;
+    e.preventDefault();
+    pos3 = e.clientX;
+    pos4 = e.clientY;
+    document.onmouseup = closeDragElement;
+    document.onmousemove = elementDrag;
+    isDragging = false;
+  }
+
+  function elementDrag(e) {
+    e = e || window.event;
+    e.preventDefault();
+    isDragging = true;
+    pos1 = pos3 - e.clientX;
+    pos2 = pos4 - e.clientY;
+    pos3 = e.clientX;
+    pos4 = e.clientY;
+    
+    let newTop = elmnt.offsetTop - pos2;
+    let newLeft = elmnt.offsetLeft - pos1;
+    
+    // Límites de pantalla
+    newTop = Math.max(0, Math.min(newTop, window.innerHeight - elmnt.offsetHeight));
+    newLeft = Math.max(0, Math.min(newLeft, window.innerWidth - elmnt.offsetWidth));
+    
+    elmnt.style.top = newTop + "px";
+    elmnt.style.left = newLeft + "px";
+    elmnt.style.bottom = "auto";
+    elmnt.style.right = "auto";
+  }
+
+  function closeDragElement() {
+    document.onmouseup = null;
+    document.onmousemove = null;
+    // Guardar posición
+    if (isDragging) {
+      localStorage.setItem(elmnt.id + '-pos', JSON.stringify({
+        top: elmnt.style.top,
+        left: elmnt.style.left
+      }));
+    }
+  }
+}
+
+// Restaurar posiciones guardadas
+function restorePosition(elmnt) {
+  const savedPos = localStorage.getItem(elmnt.id + '-pos');
+  if (savedPos) {
+    const pos = JSON.parse(savedPos);
+    elmnt.style.top = pos.top;
+    elmnt.style.left = pos.left;
+    elmnt.style.bottom = "auto";
+    elmnt.style.right = "auto";
+  } else {
+    // Posición por defecto
+    elmnt.style.bottom = "20px";
+    elmnt.style.right = "20px";
+    elmnt.style.top = "auto";
+    elmnt.style.left = "auto";
+  }
+}
+
+// Inicializar Draggable
+const widget = document.getElementById('fp-chatbot-widget');
+const toggleBtn = document.getElementById('fp-chatbot-toggle');
+const header = document.getElementById('fp-chatbot-header');
+
+makeDraggable(widget, header);
+makeDraggable(toggleBtn, toggleBtn);
+
+restorePosition(widget);
+restorePosition(toggleBtn);
+
+
+// --- Lógica del Chat ---
+let isChatbotOpen = localStorage.getItem('chatbot-open') === 'true';
+
+function toggleChatbot(e) {
+  // Evitar que el clic de soltar el arrastre abra/cierre el chat
+  if (e && e.type === 'click' && document.activeElement === toggleBtn) {
+     // Check if it was a drag or a click (handled implicitly by not opening if it was a drag)
+  }
+
+  isChatbotOpen = !isChatbotOpen;
+  localStorage.setItem('chatbot-open', isChatbotOpen);
+  updateChatbotVisibility();
+}
+
+function updateChatbotVisibility() {
+  if (isChatbotOpen) {
+    widget.style.display = 'flex';
+    toggleBtn.style.display = 'none';
+    document.getElementById('fp-chatbot-input').focus();
+    scrollToBottom();
+  } else {
+    widget.style.display = 'none';
+    toggleBtn.style.display = 'flex';
+  }
+}
+
+function scrollToBottom() {
+  const body = document.getElementById('fp-chatbot-body');
+  body.scrollTop = body.scrollHeight;
+}
+
+function appendMessage(text, sender, dateStr = '') {
+  const body = document.getElementById('fp-chatbot-body');
+  const cssClass = sender === 'bot' ? 'bot' : 'user';
+  
+  if (!dateStr) {
+    const now = new Date();
+    dateStr = now.toLocaleDateString() + ' ' + now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+  }
+
+  body.innerHTML += `
+    <div class="chat-msg-wrapper ${cssClass}">
+      <div class="chat-msg">${text}</div>
+      <div class="chat-date">${dateStr}</div>
+    </div>
+  `;
+  scrollToBottom();
+}
+
+// Cargar historial
+async function loadHistory() {
+  const body = document.getElementById('fp-chatbot-body');
+  try {
+    const response = await fetch("{% url 'panel:chatbot_api' %}");
+    if (response.ok) {
+      const data = await response.json();
+      body.innerHTML = ''; // Limpiar
+      if (data.historial.length === 0) {
+        appendMessage('¡Hola! Soy el asistente IA de Farmacia Privada. Conozco el inventario actual. ¿En qué te puedo ayudar hoy?', 'bot');
+      } else {
+        data.historial.forEach(msg => {
+          appendMessage(msg.mensaje_usuario, 'user', msg.fecha);
+          appendMessage(msg.respuesta_bot, 'bot', msg.fecha);
+        });
+      }
+    }
+  } catch (e) {
+    console.error("Error loading history", e);
+  }
+}
+
+async function sendChatMessage() {
+  const input = document.getElementById('fp-chatbot-input');
+  const message = input.value.trim();
+  if (!message) return;
+  
+  const body = document.getElementById('fp-chatbot-body');
+  
+  appendMessage(message, 'user');
+  input.value = '';
+  
+  // Mostrar "Escribiendo..."
+  const typingId = 'typing-' + Date.now();
+  body.innerHTML += `<div id="${typingId}" class="chat-msg-wrapper bot"><div class="chat-msg text-muted small"><i class="bi bi-three-dots"></i> Escribiendo...</div></div>`;
+  scrollToBottom();
+  
+  try {
+    function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+          const cookie = cookies[i].trim();
+          if (cookie.substring(0, name.length + 1) === (name + '=')) {
+            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            break;
+          }
+        }
+      }
+      return cookieValue;
+    }
+
+    const response = await fetch("{% url 'panel:chatbot_api' %}", {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken')
+      },
+      body: JSON.stringify({ message: message })
+    });
+    
+    const data = await response.json();
+    document.getElementById(typingId).remove();
+    appendMessage(data.reply, 'bot');
+    
+  } catch (error) {
+    document.getElementById(typingId).remove();
+    appendMessage('Error de conexión. Intenta de nuevo.', 'bot');
+  }
+}
+
+// Inicializar
+document.addEventListener("DOMContentLoaded", () => {
+  // Evitar clics falsos al arrastrar el botón toggle
+  let isDraggingToggle = false;
+  toggleBtn.addEventListener('mousedown', () => isDraggingToggle = false);
+  toggleBtn.addEventListener('mousemove', () => isDraggingToggle = true);
+  toggleBtn.addEventListener('mouseup', (e) => {
+    if (!isDraggingToggle) toggleChatbot(e);
+  });
+
+  updateChatbotVisibility();
+  loadHistory();
+});
+</script>
